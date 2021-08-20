@@ -9,6 +9,7 @@ see bot in testing: https://discord.gg/CvvJuAQaXh
 - add tags in embed preview
 - exclude some tag
 - end / terminate scraping
+- create discord.js version
 
 ## Known issue
 - saat melalukan request ke nh kalau ada error blum ada yang handle
