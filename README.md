@@ -1,2 +1,2 @@
 # bot-discord-pemanen-kode-nh
-test
+see bot in testing: https://discord.gg/CvvJuAQaXh
