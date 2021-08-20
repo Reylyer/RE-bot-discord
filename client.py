@@ -5,6 +5,7 @@ import asyncio
 
 from discord.ext import commands
 
+# command prefix s-
 client = commands.Bot(command_prefix="s-")
 
     
@@ -140,7 +141,7 @@ async def getNHPopular():
   await browser.close()
   return [codes, thumbnails, captions]
 
-client.run("NzQ1MjI0NjU1MzU4NjU2NTMy.Xzuqiw.Xm73-Tv2u2zmLz-IBjr8yqV-IVM")
+client.run("drop your discord bot token here")
 
 
     
