@@ -265,7 +265,7 @@ async def sendMonitorCovid(ctx):
 async def play(ctx, linkYoutube):
   # grab the user who sent the command
   user=ctx.message.author
-  voice_channel=user.voice.voice_channel
+  voice_channel=user.voice.channel
   channel=None
   # only play music if user is in a voice channel
   if voice_channel!= None:
