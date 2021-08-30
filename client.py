@@ -271,15 +271,15 @@ async def play(ctx, linkYoutube):
   if voice_channel!= None:
       # grab user's voice channel
       channel=voice_channel.name
-      await client.say('User is in channel: '+ channel)
+      await ctx.send('User is in channel: '+ channel)
       # create StreamPlayer
-      vc= await client.join_voice_channel(voice_channel)
-      player = vc.create_ffmpeg_player('test.m4a', after=lambda: print('done'))
-      player.start()
-      while not player.is_done():
+      vc= await voice_channel.connect()
+      vc.play(discord.FFmpegPCMAudio('test.m4a'), after=lambda e: print("done", e))
+      #player = vc.create_ffmpeg_player('test.m4a', after=lambda: print('done'))
+      while vc.is_playing():
           await asyncio.sleep(1)
       # disconnect after the player has finished
-      player.stop()
+      vc.stop()
       await vc.disconnect()
   else:
       await client.say('User is not in a channel.')
@@ -352,7 +352,7 @@ async def credential_check_of(mahasiswas, idTarget):
 
 
 
-client.run("your api token here")
+client.run("NzQ1MjI0NjU1MzU4NjU2NTMy.Xzuqiw.-fzlKpvCqzfgCyKMBTDnOYTM498")
 
 # client.run("drop your discord bot token here")
 
