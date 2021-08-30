@@ -352,7 +352,7 @@ async def credential_check_of(mahasiswas, idTarget):
 
 
 
-client.run("NzQ1MjI0NjU1MzU4NjU2NTMy.Xzuqiw.-fzlKpvCqzfgCyKMBTDnOYTM498")
+client.run("your api here")
 
 # client.run("drop your discord bot token here")
 
