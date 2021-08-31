@@ -167,8 +167,6 @@ async def getTagsFromCode(code = "370616"):
   return tags
 #%%
 
-
-
 #ABSEN UNDIP SET
 
 textCodeDict = {
@@ -291,31 +289,26 @@ async def credential_check_of(mahasiswas, idTarget):
   return index, password, mail, textCode
 
 
-# all about voice channel
 @client.command()
-async def play(ctx, *linkYoutubeOrSongName):
+async def play(ctx, linkYoutube):
   # grab the user who sent the command
   user=ctx.message.author
   voice_channel=user.voice.channel
-  
-  # kalau bukan link
-  print(linkYoutubeOrSongName)
-  if not "youtube.com" in linkYoutubeOrSongName:
-    linkYoutubeOrSongName = "+".join(linkYoutubeOrSongName)
-    linkYoutubeOrSongName = await searchVideoByName(linkYoutubeOrSongName)
-    
-    
+  channel=None
   # only play music if user is in a voice channel
   if voice_channel!= None:
+      # grab user's voice channel
+      channel=voice_channel.name
+      
       # download
-      await ctx.send(f"downloading: {linkYoutubeOrSongName}")
+      await ctx.send(f"downloading: {linkYoutube}")
       try:
         f = open("music.mp3")
         os.remove("music.mp3")
       except:
         pass
-      print(linkYoutubeOrSongName)
-      await downloadmp3(linkYoutubeOrSongName)
+        
+      await downloadmp3(linkYoutube)
       
       # create StreamPlayer
       vc= await voice_channel.connect()
@@ -329,13 +322,6 @@ async def play(ctx, *linkYoutubeOrSongName):
   else:
       await client.say('User is not in a channel.')
 
-@client.command()
-async def join(ctx):
-    channel = ctx.author.voice.channel
-    await channel.connect()
-@client.command()
-async def leave(ctx):
-    await ctx.voice_client.disconnect()
 
 async def downloadmp3(link):
   ydl_opts = {
@@ -351,28 +337,11 @@ async def downloadmp3(link):
       ydl.download([link])
 
 
-async def getInfoYoutube(namaLagu):
-  """mengembalikan informasi video\n
-  url\n
-  judul\n
-  durasi
-  """
- 
-  
-async def searchVideoByName(namaLagu):
-  """return link
-  """
-  browser = await launch(ignoreHTTPSErrors = True, headless = True, args=["--no-sandbox"])
-  page = await browser.newPage()
-  await page.goto(f"https://www.youtube.com/results?search_query={namaLagu}")
-  print(page.url)
-  anchorTitles = await page.querySelectorAll("#video-title")
-  
-  subjectAnchor = anchorTitles[0]
-  
-  href = await page.evaluate('(ele) => ele.getAttribute("href")', subjectAnchor)
-  await browser.close()
-  return f"https://www.youtube.com{href}"
+
+
+
+
+
 
 
 
