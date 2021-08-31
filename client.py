@@ -291,9 +291,6 @@ async def credential_check_of(mahasiswas, idTarget):
   return index, password, mail, textCode
 
 
-
-
-
 # all about voice channel
 @client.command()
 async def play(ctx, **linkYoutubeOrSongName):
@@ -302,9 +299,10 @@ async def play(ctx, **linkYoutubeOrSongName):
   voice_channel=user.voice.channel
   
   # kalau bukan link
+  print(linkYoutubeOrSongName)
   if not "youtube.com" in linkYoutubeOrSongName:
     linkYoutubeOrSongName = "+".join(linkYoutubeOrSongName)
-    linkYoutubeOrSongName = searchVideoByName(linkYoutubeOrSongName)
+    linkYoutubeOrSongName = await searchVideoByName(linkYoutubeOrSongName)
     
     
   # only play music if user is in a voice channel
