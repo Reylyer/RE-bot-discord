@@ -293,7 +293,7 @@ async def credential_check_of(mahasiswas, idTarget):
 
 # all about voice channel
 @client.command()
-async def play(ctx,   *linkYoutubeOrSongName):
+async def play(ctx, *linkYoutubeOrSongName):
   # grab the user who sent the command
   user=ctx.message.author
   voice_channel=user.voice.channel
@@ -314,7 +314,7 @@ async def play(ctx,   *linkYoutubeOrSongName):
         os.remove("music.mp3")
       except:
         pass
-        
+      print(linkYoutubeOrSongName)
       await downloadmp3(linkYoutubeOrSongName)
       
       # create StreamPlayer
@@ -365,12 +365,13 @@ async def searchVideoByName(namaLagu):
   browser = await launch(ignoreHTTPSErrors = True, headless = True, args=["--no-sandbox"])
   page = await browser.newPage()
   await page.goto(f"https://www.youtube.com/results?search_query={namaLagu}")
-
+  print(page.url)
   anchorTitles = await page.querySelectorAll("#video-title")
   
   subjectAnchor = anchorTitles[0]
   
   href = await page.evaluate('(ele) => ele.getAttribute("href")', subjectAnchor)
+  browser.close()
   return f"https://www.youtube.com{href}"
 
 
