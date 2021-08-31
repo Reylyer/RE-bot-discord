@@ -296,25 +296,28 @@ async def credential_check_of(mahasiswas, idTarget):
 
 # all about voice channel
 @client.command()
-async def play(ctx, linkYoutube):
+async def play(ctx, **linkYoutubeOrSongName):
   # grab the user who sent the command
   user=ctx.message.author
   voice_channel=user.voice.channel
-  channel=None
+  
+  # kalau bukan link
+  if not "youtube.com" in linkYoutubeOrSongName:
+    linkYoutubeOrSongName = "+".join(linkYoutubeOrSongName)
+    linkYoutubeOrSongName = searchVideoByName(linkYoutubeOrSongName)
+    
+    
   # only play music if user is in a voice channel
   if voice_channel!= None:
-      # grab user's voice channel
-      channel=voice_channel.name
-      
       # download
-      await ctx.send(f"downloading: {linkYoutube}")
+      await ctx.send(f"downloading: {linkYoutubeOrSongName}")
       try:
         f = open("music.mp3")
         os.remove("music.mp3")
       except:
         pass
         
-      await downloadmp3(linkYoutube)
+      await downloadmp3(linkYoutubeOrSongName)
       
       # create StreamPlayer
       vc= await voice_channel.connect()
@@ -350,11 +353,27 @@ async def downloadmp3(link):
       ydl.download([link])
 
 
+async def getInfoYoutube(namaLagu):
+  """mengembalikan informasi video\n
+  url\n
+  judul\n
+  durasi
+  """
+ 
+  
+async def searchVideoByName(namaLagu):
+  """return link
+  """
+  browser = await launch(ignoreHTTPSErrors = True, headless = True, args=["--no-sandbox"])
+  page = await browser.newPage()
+  await page.goto(f"https://www.youtube.com/results?search_query={namaLagu}")
 
-
-
-
-
+  anchorTitles = await page.querySelectorAll("#video-title")
+  
+  subjectAnchor = anchorTitles[0]
+  
+  href = await page.evaluate('(ele) => ele.getAttribute("href")', subjectAnchor)
+  return f"https://www.youtube.com{href}"
 
 
 
