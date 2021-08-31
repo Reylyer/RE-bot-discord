@@ -5,6 +5,7 @@ import discord
 import asyncio
 import json
 import os
+import datetime
 from types import SimpleNamespace
 import youtube_dl
 import os
@@ -316,7 +317,7 @@ async def play(ctx, *linkYoutubeOrSongName):
         pass
       print(linkYoutubeOrSongName)
       meta = await downloadmp3(linkYoutubeOrSongName)
-      await ctx.send(f"Playing: {meta['title']}\nUploader: {meta['uploader']}\nDuration: {meta['duration']}")
+      await ctx.send(f"Playing: {meta['title']}\nUploader: {meta['uploader']}\nDuration: {str(datetime.timedelta(seconds=meta['duration']))}")
 
       # create StreamPlayer
       vc= await voice_channel.connect()
