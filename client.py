@@ -308,32 +308,31 @@ async def play(ctx, *linkYoutubeOrSongName):
     
   # only play music if user is in a voice channel
   if voice_channel!= None:
-      try:
-        vc= await voice_channel.connect()
-      except:
-        pass
+    if not ctx.voice_client.is_connected()
+      await voice_channel.connect()
+    vc = ctx.voice_client
 
-      # download
-      await ctx.send(f"downloading: {linkYoutubeOrSongName}")
-      try:
-        f = open("music.mp3")
-        os.remove("music.mp3")
-      except:
-        pass
-      print(linkYoutubeOrSongName)
-      meta = await downloadmp3(linkYoutubeOrSongName)
-      await ctx.send(f"Playing: {meta['title']}\nUploader: {meta['uploader']}\nDuration: {str(datetime.timedelta(seconds=meta['duration']))}")
+    # download
+    await ctx.send(f"downloading: {linkYoutubeOrSongName}")
+    try:
+      f = open("music.mp3")
+      os.remove("music.mp3")
+    except:
+      pass
+    print(linkYoutubeOrSongName)
+    meta = await downloadmp3(linkYoutubeOrSongName)
+    await ctx.send(f"Playing: {meta['title']}\nUploader: {meta['uploader']}\nDuration: {str(datetime.timedelta(seconds=meta['duration']))}")
 
-      # create StreamPlayer
-      # if not user.voice.is_connected():
-      
-      vc.play(discord.FFmpegPCMAudio('music.mp3'), after=lambda e: print("done", e))
-      #player = vc.create_ffmpeg_player('test.m4a', after=lambda: print('done'))
-      while vc.is_playing():
-          await asyncio.sleep(1)
-      # disconnect after the player has finished
-      vc.stop()
-      # await vc.disconnect()
+    # create StreamPlayer
+    # if not user.voice.is_connected():
+    
+    vc.play(discord.FFmpegPCMAudio('music.mp3'), after=lambda e: print("done", e))
+    #player = vc.create_ffmpeg_player('test.m4a', after=lambda: print('done'))
+    while vc.is_playing():
+        await asyncio.sleep(1)
+    # disconnect after the player has finished
+    vc.stop()
+    # await vc.disconnect()
   else:
       await client.say('User is not in a channel.')
 
