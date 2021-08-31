@@ -316,7 +316,7 @@ async def play(ctx, *linkYoutubeOrSongName):
         pass
       print(linkYoutubeOrSongName)
       meta = await downloadmp3(linkYoutubeOrSongName)
-      await ctx.send(f"Playing: {meta['title']}\nUploader: {meta['uploader']}\nViews: {meta['views']}")
+      await ctx.send(f"Playing: {meta['title']}\nUploader: {meta['uploader']}\nViews: {meta['view_count']}")
 
       # create StreamPlayer
       vc= await voice_channel.connect()
