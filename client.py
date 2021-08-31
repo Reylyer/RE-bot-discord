@@ -5,14 +5,16 @@ import asyncio
 import json
 from types import SimpleNamespace
 from dotenv import load_dotenv
-
-
+import os
 #import time
 
 from discord.ext import commands
 
 # command prefix s-
 client = commands.Bot(command_prefix="s-")
+
+# environment variable
+TOKEN = os.getenv('TOKEN')
 
 
 # event
@@ -355,7 +357,7 @@ async def credential_check_of(mahasiswas, idTarget):
 
 
 
-client.run("")
+client.run(TOKEN)
 
 # client.run("drop your discord bot token here")
 
