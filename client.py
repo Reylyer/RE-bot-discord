@@ -320,7 +320,7 @@ async def play(ctx, *linkYoutubeOrSongName):
 
       # create StreamPlayer
       vc= await voice_channel.connect()
-      vc.play(discord.FFmpegPCMAudio('test'), after=lambda e: print("done", e))
+      vc.play(discord.FFmpegPCMAudio('music.mp3'), after=lambda e: print("done", e))
       #player = vc.create_ffmpeg_player('test.m4a', after=lambda: print('done'))
       while vc.is_playing():
           await asyncio.sleep(1)
