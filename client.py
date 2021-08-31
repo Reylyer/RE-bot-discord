@@ -308,6 +308,7 @@ async def play(ctx, *linkYoutubeOrSongName):
     
   # only play music if user is in a voice channel
   if voice_channel!= None:
+      vc= await voice_channel.connect()
       # download
       await ctx.send(f"downloading: {linkYoutubeOrSongName}")
       try:
@@ -321,7 +322,7 @@ async def play(ctx, *linkYoutubeOrSongName):
 
       # create StreamPlayer
       # if not user.voice.is_connected():
-      vc= await voice_channel.connect()
+      
       vc.play(discord.FFmpegPCMAudio('music.mp3'), after=lambda e: print("done", e))
       #player = vc.create_ffmpeg_player('test.m4a', after=lambda: print('done'))
       while vc.is_playing():
