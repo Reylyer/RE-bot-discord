@@ -315,8 +315,9 @@ async def play(ctx, *linkYoutubeOrSongName):
       except:
         pass
       print(linkYoutubeOrSongName)
-      await downloadmp3(linkYoutubeOrSongName)
-      
+      meta = await downloadmp3(linkYoutubeOrSongName)
+      await ctx.send(f"Playing: {meta['title']}\nUploader: {meta['uploader']}\nViews: {meta['title']}")
+
       # create StreamPlayer
       vc= await voice_channel.connect()
       vc.play(discord.FFmpegPCMAudio('test'), after=lambda e: print("done", e))
@@ -349,9 +350,11 @@ async def downloadmp3(link):
   }
   with youtube_dl.YoutubeDL(ydl_opts) as ydl:
       ydl.download([link])
+      meta = ydl.extract_info(link)
+      return meta
 
 
-async def getInfoYoutube(namaLagu):
+async def getInfoYoutube(linkYoutubeOrSongName):
   """mengembalikan informasi video\n
   url\n
   judul\n
