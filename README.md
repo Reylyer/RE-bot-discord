@@ -6,10 +6,10 @@ see bot in testing: https://discord.gg/CvvJuAQaXh
 - add parameter interval
 - multiple server
 - multiple channel
-- add tags in embed preview
+- add tags in embed preview ✅
 - exclude some tag
 - end / terminate scraping
 - create discord.js version
+- music player
 
 ## Known issue
-- saat melalukan request ke nh kalau ada error blum ada yang handle
