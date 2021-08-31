@@ -291,6 +291,10 @@ async def credential_check_of(mahasiswas, idTarget):
   return index, password, mail, textCode
 
 
+
+
+
+# all about voice channel
 @client.command()
 async def play(ctx, linkYoutube):
   # grab the user who sent the command
@@ -324,6 +328,13 @@ async def play(ctx, linkYoutube):
   else:
       await client.say('User is not in a channel.')
 
+@client.command()
+async def join(ctx):
+    channel = ctx.author.voice.channel
+    await channel.connect()
+@client.command()
+async def leave(ctx):
+    await ctx.voice_client.disconnect()
 
 async def downloadmp3(link):
   ydl_opts = {
