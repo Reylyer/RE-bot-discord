@@ -1,10 +1,14 @@
 #%%
 from pyppeteer import launch
-from types import SimpleNamespace
 import discord
 import asyncio
 import json
 import os
+from types import SimpleNamespace
+from __future__ import unicode_literals
+import youtube_dl
+import os
+
 #import time
 from discord.ext import commands
 from dotenv import load_dotenv
@@ -158,7 +162,7 @@ async def getTagsFromCode(code = "370616"):
   for a in anchorTags:
     tag = await page.evaluate('(ele) => ele.querySelector("span.name").innerText', a)
     tags.append(tag)
-  
+  await page.close()
   await browser.close()
   return tags
 #%%
@@ -264,28 +268,6 @@ async def sendMonitorCovid(ctx):
   with open("MAHASISWA.json", "w+") as f:
     pass
   
-@client.command()
-async def play(ctx, linkYoutube):
-  # grab the user who sent the command
-  user=ctx.message.author
-  voice_channel=user.voice.channel
-  channel=None
-  # only play music if user is in a voice channel
-  if voice_channel!= None:
-      # grab user's voice channel
-      channel=voice_channel.name
-      await ctx.send('User is in channel: '+ channel)
-      # create StreamPlayer
-      vc= await voice_channel.connect()
-      vc.play(discord.FFmpegPCMAudio('test.m4a'), after=lambda e: print("done", e))
-      #player = vc.create_ffmpeg_player('test.m4a', after=lambda: print('done'))
-      while vc.is_playing():
-          await asyncio.sleep(1)
-      # disconnect after the player has finished
-      vc.stop()
-      await vc.disconnect()
-  else:
-      await client.say('User is not in a channel.')
 
 
 async def credential_check_of(mahasiswas, idTarget):
@@ -309,9 +291,52 @@ async def credential_check_of(mahasiswas, idTarget):
   return index, password, mail, textCode
 
 
+@client.command()
+async def play(ctx, linkYoutube):
+  # grab the user who sent the command
+  user=ctx.message.author
+  voice_channel=user.voice.channel
+  channel=None
+  # only play music if user is in a voice channel
+  if voice_channel!= None:
+      # grab user's voice channel
+      channel=voice_channel.name
+      
+      # download
+      await ctx.send(f"downloading: {linkYoutube}")
+      try:
+        f = open("music.mp3")
+        os.remove("music.mp3")
+      except:
+        pass
+        
+      await downloadmp3(linkYoutube)
+      
+      # create StreamPlayer
+      vc= await voice_channel.connect()
+      vc.play(discord.FFmpegPCMAudio('test'), after=lambda e: print("done", e))
+      #player = vc.create_ffmpeg_player('test.m4a', after=lambda: print('done'))
+      while vc.is_playing():
+          await asyncio.sleep(1)
+      # disconnect after the player has finished
+      vc.stop()
+      await vc.disconnect()
+  else:
+      await client.say('User is not in a channel.')
 
 
-
+async def downloadmp3(link):
+  ydl_opts = {
+      'format': 'bestaudio/best',
+      'postprocessors': [{
+          'key': 'FFmpegExtractAudio',
+          'preferredcodec': 'mp3',
+          'preferredquality': '192',
+      }],
+      'outtmpl':'music.mp3',
+  }
+  with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+      ydl.download([link])
 
 
 
