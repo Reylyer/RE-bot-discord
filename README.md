@@ -10,6 +10,18 @@ see bot in testing: https://discord.gg/CvvJuAQaXh
 - exclude some tag
 - end / terminate scraping
 - create discord.js version
-- music player
+
+
+## music player
+- search
+- pause
+- skip
+- song info
+- queue
+- remove queue
+- reset queue
+- current
+- play ✅
+- leave ✅
 
 ## Known issue
