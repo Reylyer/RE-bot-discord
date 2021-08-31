@@ -293,7 +293,7 @@ async def credential_check_of(mahasiswas, idTarget):
 
 # all about voice channel
 @client.command()
-async def play(ctx, **linkYoutubeOrSongName):
+async def play(ctx,   *linkYoutubeOrSongName):
   # grab the user who sent the command
   user=ctx.message.author
   voice_channel=user.voice.channel
