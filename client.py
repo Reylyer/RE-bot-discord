@@ -344,6 +344,25 @@ async def join(ctx):
 @client.command()
 async def leave(ctx):
     await ctx.voice_client.disconnect()
+@client.command()
+async def pause(ctx):
+  await ctx.voice_client.pause()
+@client.command()
+async def resume(ctx):
+  await ctx.voice_client.resume()
+@client.command()
+async def stop(ctx):
+  await ctx.voice_client.stop()
+@client.command()
+async def is_connected(ctx):
+  await ctx.send(str(ctx.voice_client.is_connected()))
+@client.command()
+async def is_playing(ctx):
+  await ctx.send(str(ctx.voice_client.is_playing()))
+@client.command()
+async def is_paused(ctx):
+  await ctx.send(str(ctx.voice_client.is_paused()))
+
 
 async def downloadmp3(link):
   ydl_opts = {
