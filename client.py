@@ -4,19 +4,20 @@ from pyppeteer import launch
 import discord
 import asyncio
 import json
+import os
 from types import SimpleNamespace
-
 import youtube_dl
 import os
 
-
 #import time
-
 from discord.ext import commands
-
+from dotenv import load_dotenv
 # command prefix s-
 client = commands.Bot(command_prefix="s-")
 
+# environment variable
+load_dotenv('.env')
+TOKEN = os.getenv('TOKEN')
 
 # event
 @client.event # bot online (saat .py ini dijalankan)
@@ -313,7 +314,7 @@ async def play(ctx, linkYoutube):
       
       # create StreamPlayer
       vc= await voice_channel.connect()
-      vc.play(discord.FFmpegPCMAudio('music.mp3'), after=lambda e: print("done", e))
+      vc.play(discord.FFmpegPCMAudio('test'), after=lambda e: print("done", e))
       #player = vc.create_ffmpeg_player('test.m4a', after=lambda: print('done'))
       while vc.is_playing():
           await asyncio.sleep(1)
@@ -378,8 +379,8 @@ async def downloadmp3(link):
 
 
 
-
-client.run("your api here")
+print(TOKEN)
+client.run(TOKEN)
 
 # client.run("drop your discord bot token here")
 
@@ -390,3 +391,5 @@ client.run("your api here")
 
 # on repl.it if not working :
 # install-pkg gconf-service libasound2 libatk1.0-0 libatk-bridge2.0-0 libc6 libcairo2 libcups2 libdbus-1-3 libexpat1 libfontconfig1 libgcc1 libgconf-2-4 libgdk-pixbuf2.0-0 libglib2.0-0 libgtk-3-0 libnspr4 libpango-1.0-0 libpangocairo-1.0-0 libstdc++6 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 libxss1 libxtst6 ca-certificates fonts-liberation libappindicator1 libnss3 lsb-release xdg-utils wget
+
+# %%

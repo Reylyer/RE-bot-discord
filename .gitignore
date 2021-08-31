@@ -6,3 +6,4 @@ Testing
 test
 default_clone.ps1
 test.json
+.env
