@@ -4,6 +4,9 @@ import discord
 import asyncio
 import json
 from types import SimpleNamespace
+from dotenv import load_dotenv
+
+
 #import time
 
 from discord.ext import commands
@@ -352,7 +355,7 @@ async def credential_check_of(mahasiswas, idTarget):
 
 
 
-client.run("your api here")
+client.run("ODc0NjUwOTgxNjM4NDcxNzc1.YRKENA.yLZzjcgqZzWiThA_OhfzfiYTK08")
 
 # client.run("drop your discord bot token here")
 
