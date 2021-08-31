@@ -293,8 +293,10 @@ async def credential_check_of(mahasiswas, idTarget):
 
 
 # all about voice channel
+vc = 0
 @client.command()
 async def play(ctx, *linkYoutubeOrSongName):
+  global vc
   # grab the user who sent the command
   user=ctx.message.author
   voice_channel=user.voice.channel
@@ -308,9 +310,10 @@ async def play(ctx, *linkYoutubeOrSongName):
     
   # only play music if user is in a voice channel
   if voice_channel!= None:
+    channel = ctx.author.voice.channel
     if not ctx.voice_client.is_connected():
-      await voice_channel.connect()
-    vc = ctx.voice_client
+      vc = await voice_channel.connect()
+    #vc = ctx.voice_client
 
     # download
     await ctx.send(f"downloading: {linkYoutubeOrSongName}")
