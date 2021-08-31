@@ -1,3 +1,4 @@
+from __future__ import unicode_literals
 #%%
 from pyppeteer import launch
 import discord
@@ -5,7 +6,6 @@ import asyncio
 import json
 import os
 from types import SimpleNamespace
-from __future__ import unicode_literals
 import youtube_dl
 import os
 
