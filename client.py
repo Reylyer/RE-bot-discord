@@ -320,8 +320,8 @@ async def play(ctx, *linkYoutubeOrSongName):
       await ctx.send(f"Playing: {meta['title']}\nUploader: {meta['uploader']}\nDuration: {str(datetime.timedelta(seconds=meta['duration']))}")
 
       # create StreamPlayer
-      if not user.voice.is_connected():
-        vc= await voice_channel.connect()
+      # if not user.voice.is_connected():
+      vc= await voice_channel.connect()
       vc.play(discord.FFmpegPCMAudio('music.mp3'), after=lambda e: print("done", e))
       #player = vc.create_ffmpeg_player('test.m4a', after=lambda: print('done'))
       while vc.is_playing():
