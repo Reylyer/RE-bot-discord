@@ -308,7 +308,11 @@ async def play(ctx, *linkYoutubeOrSongName):
     
   # only play music if user is in a voice channel
   if voice_channel!= None:
-      vc= await voice_channel.connect()
+      try:
+        vc= await voice_channel.connect()
+      except:
+        pass
+
       # download
       await ctx.send(f"downloading: {linkYoutubeOrSongName}")
       try:
