@@ -320,14 +320,15 @@ async def play(ctx, *linkYoutubeOrSongName):
       await ctx.send(f"Playing: {meta['title']}\nUploader: {meta['uploader']}\nDuration: {str(datetime.timedelta(seconds=meta['duration']))}")
 
       # create StreamPlayer
-      vc= await voice_channel.connect()
+      if not client.is_connected():
+        vc= await voice_channel.connect()
       vc.play(discord.FFmpegPCMAudio('music.mp3'), after=lambda e: print("done", e))
       #player = vc.create_ffmpeg_player('test.m4a', after=lambda: print('done'))
       while vc.is_playing():
           await asyncio.sleep(1)
       # disconnect after the player has finished
       vc.stop()
-      await vc.disconnect()
+      # await vc.disconnect()
   else:
       await client.say('User is not in a channel.')
 
