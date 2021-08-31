@@ -10,7 +10,7 @@ from env import *
 from discord.ext import commands
 from dotenv import load_dotenv
 # command prefix s-
-client = commands.Bot(command_prefix="s-")
+client = commands.Bot(command_prefix="z-")
 
 # environment variable
 load_dotenv('.env')

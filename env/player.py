@@ -134,8 +134,8 @@ def downloadmp3(link: str, serverid: str) -> list[object, dict]:
       'outtmpl':f'server/{serverid}/music{queueLen}.mp3',
   }
   queueLen +=1
-  with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-    meta = ydl.extract_info(link)
+  with youtube_dl.YoutubeDL(ydl_opts) as ydl: # masi ada raise error ato belom reload?
+    meta = ydl.extract_info(link) # 
     downloadThread = threading.Thread(target=ydl.download, args=([link]), name=f"threadXXXgaming - {meta['title']}")
     return downloadThread, meta
 
