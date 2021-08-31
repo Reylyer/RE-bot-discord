@@ -371,7 +371,7 @@ async def searchVideoByName(namaLagu):
   subjectAnchor = anchorTitles[0]
   
   href = await page.evaluate('(ele) => ele.getAttribute("href")', subjectAnchor)
-  browser.close()
+  await browser.close()
   return f"https://www.youtube.com{href}"
 
 
