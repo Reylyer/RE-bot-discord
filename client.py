@@ -441,49 +441,50 @@ async def credential_check_of(mahasiswas, idTarget):
 
 
 # all about voice channel
-vc = 0
 @client.command()
 async def play(ctx, *linkYoutubeOrSongName):
-  global vc
   # grab the user who sent the command
   user=ctx.message.author
   voice_channel=user.voice.channel
   
   # kalau bukan link
   print(linkYoutubeOrSongName)
-  if not "youtube.com" in linkYoutubeOrSongName:
+  if not "youtu" in linkYoutubeOrSongName:
     linkYoutubeOrSongName = "+".join(linkYoutubeOrSongName)
     linkYoutubeOrSongName = await searchVideoByName(linkYoutubeOrSongName)
     
-    
   # only play music if user is in a voice channel
   if voice_channel!= None:
-    channel = ctx.author.voice.channel
-    if vc == 0:
-      vc = await voice_channel.connect()
-    #vc = ctx.voice_client
-
-    # download
-    await ctx.send(f"downloading: {linkYoutubeOrSongName}")
     try:
-      f = open("music.mp3")
-      os.remove("music.mp3")
-    except:
-      pass
-    print(linkYoutubeOrSongName)
-    meta = await downloadmp3(linkYoutubeOrSongName)
-    await ctx.send(f"Playing: {meta['title']}\nUploader: {meta['uploader']}\nDuration: {str(datetime.timedelta(seconds=meta['duration']))}")
+      # https://discordpy.readthedocs.io/en/stable/api.html#discord.VoiceClient
+      voice_client = ctx.author.voice
+      if not voice_client.is_connected():
+        voice_client = await voice_channel.connect()
+      # vc = ctx.voice_client
 
-    # create StreamPlayer
-    # if not user.voice.is_connected():
-    
-    vc.play(discord.FFmpegPCMAudio('music.mp3'), after=lambda e: print("done", e))
-    #player = vc.create_ffmpeg_player('test.m4a', after=lambda: print('done'))
-    while vc.is_playing():
-        await asyncio.sleep(1)
-    # disconnect after the player has finished
-    vc.stop()
-    # await vc.disconnect()
+      # download
+      await ctx.send(f"downloading: {linkYoutubeOrSongName}")
+      try:
+        f = open("music.mp3")
+        os.remove("music.mp3")
+      except:
+        pass
+      print(linkYoutubeOrSongName)
+      meta = await downloadmp3(linkYoutubeOrSongName)
+      await ctx.send(f"Playing: {meta['title']}\nUploader: {meta['uploader']}\nDuration: {str(datetime.timedelta(seconds=meta['duration']))}")
+
+      # create StreamPlayer
+      # if not user.voice.is_connected():
+      
+      voice_client.play(discord.FFmpegPCMAudio('music.mp3'), after=lambda e: print("done", e))
+      #player = vc.create_ffmpeg_player('test.m4a', after=lambda: print('done'))
+      while voice_client.is_playing():
+          await asyncio.sleep(1)
+      # disconnect after the player has finished
+      voice_client.stop()
+      # await vc.disconnect()
+    except Exception as e:
+      await ctx.send(e)
   else:
       await client.say('User is not in a channel.')
 
@@ -564,6 +565,11 @@ async def searchVideoByName(namaLagu):
 async def ip(ctx):
   await ctx.send("20.85.244.255")
 
+@client.comman()
+async def run(ctx, code):
+  global vc
+  await ctx.send("HATI HATI MENGGUNAKAN COMMAND INI")
+  eval(code)
 
 
 
