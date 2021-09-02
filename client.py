@@ -530,6 +530,9 @@ async def is_paused(ctx):
   
 @client.command()
 async def voice_status(ctx):
+  print(client.voice_clients)
+  await ctx.send(type(client.voice_clients))
+  await ctx.send(client.voice_clients)
   await ctx.send(json.dumps([vc.__dict__ for vc in client.voice_clients]))
 
 
