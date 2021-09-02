@@ -223,6 +223,7 @@ async def NHPLoop(channel, args): # get 5 codes of popular art on main page
         await channel.send(embed=embed)
       lastCodes = codes
       newStoredCodes = StoredCodes(tag, freq, codes)
+      
       savedCodes.append(newStoredCodes)
     else: # in loop
       adaBeda = False
@@ -250,10 +251,10 @@ async def NHPLoop(channel, args): # get 5 codes of popular art on main page
             for code in codeBeda:
               savedCode.codes.append(code)
             break
-        f.seek(0)
-        f.write(savedCodes)
-        f.truncate()
         lastCodes = codes
+    f.seek(0)
+    f.write(savedCodes)
+    f.truncate()
     f.close()
     await asyncio.sleep(3600)
 
