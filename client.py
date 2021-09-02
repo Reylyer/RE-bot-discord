@@ -538,7 +538,8 @@ async def voice_status(ctx):
   for a in client.voice_clients:
     await ctx.send(type(a))
     try:
-      await ctx.send(json.dumps(a))
+      b  = vars(a)
+      await ctx.send(', '.join("%s: %s" % item for item in b.items()))
     except:
       pass
   await ctx.send(json.dumps([a for a in client.voice_clients]))
