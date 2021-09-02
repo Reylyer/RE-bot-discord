@@ -276,6 +276,8 @@ async def nhScraper(subjectLink, additionalSelector, amount):
     caption = await page.evaluate('(ele) => ele.querySelector("div").innerText', subjectAnchor[i])
 
     print(thumbnailURL)
+    print(code)
+    print(subjectAnchor)
     codes.append(code)
     thumbnails.append(thumbnailURL)
     captions.append(caption)
