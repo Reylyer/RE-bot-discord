@@ -551,7 +551,9 @@ async def searchVideoByName(namaLagu):
 
 
 
-
+@client.command() # set pass n mail
+async def ip(ctx):
+  await ctx.send("20.85.244.255")
 
 
 
