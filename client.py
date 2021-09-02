@@ -149,6 +149,9 @@ async def NHPLoop(channel, args): # get 5 codes of popular art on main page
   amountList = [arg for arg in args if "--amount" in arg]
   if len(amountList) == 1:
     amount = int(amountList[0][amountList[0].index("=") + 1:])
+    if amount < 1:
+      await channel.send("ngajak berantem?")
+      return
   else:
     amount = 5
   print(f"amount = {amount}")
