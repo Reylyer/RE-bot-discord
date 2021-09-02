@@ -66,6 +66,14 @@ async def ban(ctx, member : discord.Member, *, reason = None):
 #---------------------------------------------------------
 
 # NH SET
+try:
+  f = open("nhcode.json")
+  f.close()
+except:
+  with open("nhcode.json", "w") as f:
+    f.write(json.dumps([]))
+    f.close()
+
 lastCodes = []
 nhInstanceRunning = False
 @client.command() #s-seerNH_here
