@@ -214,14 +214,13 @@ async def NHPLoop(channel, args): # get 5 codes of popular art on main page
       if len(lastCodes) == 0: # first time run on certain tag and freq
         for i in range(0, len(codes)):
           # https://stackoverflow.com/questions/64527464/clickable-link-inside-message-discord-py
-          tags = await getTagsFromCode(codes[i])
+          [tags, thumbnail, pages] = await getTagsAndThumbnailAndPagesFromCode(codes[i])
           embed = discord.Embed()
-          thumbnail = f"https://t.nhentai.net/galleries/{codes[i]}/cover.jpg"
           if "http" not in thumbnail:
             await channel.send(f"can't load the thumbnail, thumbnail fed: {thumbnail}")
           else:
             embed.set_image(url=thumbnail)
-          embed.description = f"{captions[i]}\n\nTags: •{' •'.join(tags)}\n\n[#{codes[i]}](https://nhentai.net/g/{codes[i]})."
+          embed.description = f"{captions[i]}\n\nTags: •{' •'.join(tags)}\nPages: {pages}\n\n[#{codes[i]}](https://nhentai.net/g/{codes[i]})."
           await channel.send(embed=embed)
         lastCodes = codes
         newStoredCodes = StoredCodes(tag, freq, codes)
@@ -236,16 +235,15 @@ async def NHPLoop(channel, args): # get 5 codes of popular art on main page
           else:
             codeBeda.append(codes[i])
             adaBeda = True
-            tags = await getTagsFromCode(codes[i])
+            [tags, thumbnail, pages] = await getTagsAndThumbnailAndPagesFromCode(codes[i])
             embed = discord.Embed()
-            thumbnail = f"https://t.nhentai.net/galleries/{codes[i]}/cover.jpg"
             print(thumbnail)
             print("\n")
             if "http" not in thumbnail:
               await channel.send(f"can't load the thumbnail, thumbnail fed: {thumbnail}")
             else:
               embed.set_image(url=thumbnail)
-            embed.description = f"{captions[i]}\n\nTags: •{' •'.join(tags)}\n\n[#{codes[i]}](https://nhentai.net/g/{codes[i]})."
+            embed.description = f"{captions[i]}\n\nTags: •{' •'.join(tags)}\nPages: {pages}\n\n[#{codes[i]}](https://nhentai.net/g/{codes[i]})."
             await channel.send(embed=embed)
         if not adaBeda:
           await channel.send("no new art in popular(main page)")
@@ -297,7 +295,7 @@ async def nhScraper(subjectLink, additionalSelector, amount):
   await browser.close()
   return [codes, captions]
 
-async def getTagsFromCode(code = "370616"):
+async def getTagsAndThumbnailAndPagesFromCode(code = "370616"):
   browser = await launch(ignoreHTTPSErrors = True, headless = True, args=["--no-sandbox"])
   page = await browser.newPage()
   await page.goto(f"https://nhentai.net/g/{code}/")
@@ -308,9 +306,11 @@ async def getTagsFromCode(code = "370616"):
   for a in anchorTags:
     tag = await page.evaluate('(ele) => ele.querySelector("span.name").innerText', a)
     tags.append(tag)
+  thumbnailURL = await page.evaluate("""() => document.querySelector(".lazyload").getAttribute("data-src")""")
+  pages =  await page.evaluate(""" () => document.querySelector("a.tag).querySelector("span.name").innerText """)
   await page.close()
   await browser.close()
-  return tags
+  return [tags, thumbnailURL, pages]
 
 
 
