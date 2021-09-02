@@ -1,4 +1,5 @@
 from __future__ import unicode_literals
+from operator import sub
 #%%
 from pyppeteer import launch
 import discord
@@ -74,10 +75,15 @@ except:
     f.write(json.dumps([]))
     f.close()
 
-lastCodes = []
+class StoredCodes():
+  def __init__(self, tag, freq, codes):
+    self.tag = tag
+    self.freq = freq
+    self.codes = codes
+
 nhInstanceRunning = False
 @client.command() #s-seerNH_here
-async def seerNH_here(ctx):
+async def seerNH_here(ctx, *args):
     global nhInstanceRunning
     
     # get channel where seerNH_here invoked
@@ -87,31 +93,117 @@ async def seerNH_here(ctx):
         ctx.send(f"seer sudah aktif")
     else:
         nhInstanceRunning = True
-        await NHPLoop(channel)
+        await NHPLoop(channel, args)
 
 
-async def NHPLoop(channel): # get 5 codes of popular art on main page
+async def NHPLoop(channel, args): # get 5 codes of popular art on main page
   global nhInstanceRunning
-  global lastCodes
+  firstCheck = True
+  # lowering the args
+  args = [arg.lower() for arg in args]
+  
+  # process args
+  # --tag
+  # --frequency
+  # --amount    amount is like grab top # but can be in recent too
+  if len(args) == 0:
+    additionalSelector = ".index-popular"
+    tag = "main"
+    freq = ""
+    amount = 5
+    
+  # input tag
+  tagList = [arg for arg in args if "--tag" in arg]
+  if len(tagList) == 1:
+    tag = tagList[0][tagList[0].index("=") + 1 :]
+  else:
+    tag = "main"
+  print(f"tag = {tag}")
+    
+  # input freq
+  # valid input for freq
+  # recent
+  # today
+  # week
+  # all-time
+  # freqList, list is in its name but actually its just element that contains --freq=something
+  freqList = [arg for arg in args if "--freq" in arg]
+  if len(freqList) == 1 and "recent" in freqList[0]:
+    freq = freqList[0][freqList[0].index("=") + 1:]
+    prefix = "popular"
+    if freq == "all-time": # all-time = https://nhentai.net/tag/{yourtag}/popular
+      freq = prefix
+    else:
+      freq = f"{prefix}-{freq}"
+  else:
+    freq = ""
+  print(f"freq = {freq}")
+  
+  # input amount
+  # valid input 1 - 25 if not main page else just 1 - 5
+  # not support for multiple pages
+  amountList = [arg for arg in args if "--amount" in arg]
+  if len(amountList) == 1:
+    amount = int(amountList[0][amountList[0].index("=") + 1:])
+  else:
+    amount = 5
+  print(f"amount = {amount}")
+  
+  
+ 
+    
+  subjectLink = "https://nhentai.net"
+  if tag != "main":
+    subjectLink +=  f"/tag/{tag}/{freq}"
+    
   while nhInstanceRunning:
-    [codes, thumbnails, captions] = await getNHPopular()
-    if len(lastCodes) == 0: # first time run
+    with open("nhcode.json", "r+") as f:
+      content = f.read()
+      #JSON to python Object
+      print(f"content = {content}")
+      savedCodes = json.loads(content, object_hook= lambda o: SimpleNamespace(**o))
+      # savedCodes structures
+      # [
+      #  {
+      #   "tag": "some-tag1",
+      #   "freq": "freq-types2",
+      #   "codes": [...,...,...]
+      #  },{
+      #   "tag": "some-tag2",
+      #   "freq": "freq-types2"
+      #   "codes": [...,...,...]
+      #  }
+      # ]
+      # 
+      print(f"codes = {savedCodes}")
+      # resuming from saved codes
+      if firstCheck:
+        for savedCode in savedCodes:
+          if savedCode.tag == tag and savedCode.freq == freq:
+            lastCodes = savedCode.codes
+            break
+        firstCheck = False
+      
+    [codes, thumbnails, captions] = await nhScraper(subjectLink, additionalSelector, amount)
+    if len(lastCodes) == 0: # first time run on certain tag and freq
       for i in range(0, len(codes)):
         # https://stackoverflow.com/questions/64527464/clickable-link-inside-message-discord-py
         tags = await getTagsFromCode(codes[i])
         embed = discord.Embed()
-        print(thumbnails[i])
-        print("\n")
         embed.set_image(url=thumbnails[i])
         embed.description = f"{captions[i]}\n\nTags: •{' •'.join(tags)}\n\n[#{codes[i]}](https://nhentai.net/g/{codes[i]})."
         await channel.send(embed=embed)
       lastCodes = codes
+      newStoredCodes = StoredCodes(tag, freq, codes)
+      savedCodes.append(newStoredCodes)
     else: # in loop
       adaBeda = False
+      codeBeda = []
       for i in range(0, len(codes)):
         if codes[i] in lastCodes:
           pass
         else:
+          codeBeda.append(codes[i])
           adaBeda = True
           embed = discord.Embed()
           print(thumbnails[i])
@@ -122,32 +214,41 @@ async def NHPLoop(channel): # get 5 codes of popular art on main page
       if not adaBeda:
         await channel.send("no new art in popular(main page)")
       else:
+        for savedCode in savedCodes:
+          if savedCode.tag == tag and savedCode.freq == freq:
+            for code in codeBeda:
+              savedCode.codes.append(code)
+            break
+        f.seek(0)
+        f.write(savedCodes)
+        f.truncate()
         lastCodes = codes
+    f.close()
     await asyncio.sleep(3600)
 
 # this is the scrap function 
-async def getNHPopular():
+async def nhScraper(subjectLink, additionalSelector, amount):
   browser = await launch(ignoreHTTPSErrors = True, headless = True, args=["--no-sandbox"])
   page = await browser.newPage()
-  await page.goto('https://nhentai.net')
+  await page.goto(subjectLink)
 
   # ambil tag div popular
-  popularDiv = await page.querySelector(".container.index-container.index-popular")
+  subjectDiv = await page.querySelector(f".container.index-container{additionalSelector}")
 
   # buat list yang isinya anchor dari karya popular
-  anchorInPopularDiv = await popularDiv.querySelectorAll(".cover")
+  subjectAnchor = await subjectDiv.querySelectorAll(".cover")
   codes = []
   thumbnails = []
   captions = []
-
+  if amount > len(subjectAnchor):
+    amount = len(subjectAnchor)
   # olah setiap anchor untuk di ekstrak kode dan thumbnailnya
-  for a in anchorInPopularDiv:
-    code = await page.evaluate('(ele) => ele.getAttribute("href")', a)
+  for i in range(0, amount):
+    code = await page.evaluate('(ele) => ele.getAttribute("href")', subjectAnchor[i])
     code = code[3:-1]
 
-    thumbnailURL = await page.evaluate('(ele) => ele.querySelector("img").getAttribute("src")', a)
-
-    caption = await page.evaluate('(ele) => ele.querySelector("div").innerText', a)
+    thumbnailURL = await page.evaluate('(ele) => ele.querySelector("img").getAttribute("src")', subjectAnchor[i])
+    caption = await page.evaluate('(ele) => ele.querySelector("div").innerText', subjectAnchor[i])
 
     print(thumbnailURL)
     codes.append(code)
@@ -156,7 +257,7 @@ async def getNHPopular():
     
   await browser.close()
   return [codes, thumbnails, captions]
-#%%
+
 async def getTagsFromCode(code = "370616"):
   browser = await launch(ignoreHTTPSErrors = True, headless = True, args=["--no-sandbox"])
   page = await browser.newPage()
@@ -171,7 +272,7 @@ async def getTagsFromCode(code = "370616"):
   await page.close()
   await browser.close()
   return tags
-#%%
+
 
 
 
@@ -457,4 +558,3 @@ client.run(TOKEN)
 # on repl.it if not working :
 # install-pkg gconf-service libasound2 libatk1.0-0 libatk-bridge2.0-0 libc6 libcairo2 libcups2 libdbus-1-3 libexpat1 libfontconfig1 libgcc1 libgconf-2-4 libgdk-pixbuf2.0-0 libglib2.0-0 libgtk-3-0 libnspr4 libpango-1.0-0 libpangocairo-1.0-0 libstdc++6 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 libxss1 libxtst6 ca-certificates fonts-liberation libappindicator1 libnss3 lsb-release xdg-utils wget
 
-# %%
