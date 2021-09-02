@@ -308,7 +308,8 @@ async def getTagsAndThumbnailAndPagesFromCode(code = "370616"):
     tags.append(tag)
   imgThumbnail = await page.querySelector(".lazyload")
   thumbnailURL = await page.evaluate("""(ele) => ele.getAttribute("data-src")""", imgThumbnail)
-  anchorPages = await page.querySelector("a.tag")
+  anchorPages = await page.querySelectorAll("a.tag")
+  anchorPages = anchorPages[-1]
   pages =  await page.evaluate(""" (ele) => ele.querySelector("span.name").innerText """, anchorPages)
   await page.close()
   await browser.close()
