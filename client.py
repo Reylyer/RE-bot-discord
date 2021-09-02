@@ -117,7 +117,7 @@ async def NHPLoop(channelid): # get 5 codes of popular art on main page
           embed.description = f"{captions[i]}\n\nTags: •{' •'.join(tags)}\n\n[#{codes[i]}](https://nhentai.net/g/{codes[i]})."
           await channel.send(embed=embed)
       if not adaBeda:
-        await channel.send("no new art in popular(main page")
+        await channel.send("no new art in popular(main page)")
       else:
         lastCodes = codes
     await asyncio.sleep(3600)
