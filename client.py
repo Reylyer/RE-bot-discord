@@ -1,5 +1,6 @@
 from __future__ import unicode_literals
 from operator import sub
+from discord.utils import to_json
 #%%
 from pyppeteer import launch
 import discord
@@ -527,13 +528,20 @@ async def is_playing(ctx):
 @client.command()
 async def is_paused(ctx):
   await ctx.send(str(ctx.voice_client.is_paused()))
-  
+
+
 @client.command()
 async def voice_status(ctx):
   print(client.voice_clients)
   await ctx.send(type(client.voice_clients))
   await ctx.send(client.voice_clients)
-  await ctx.send(json.dumps([vc.__dict__ for vc in [test for test in client.voice_clients]]))
+  for a in client.voice_clients:
+    await ctx.send(type(a))
+    try:
+      await ctx.send(json.dumps(a))
+    except:
+      pass
+  await ctx.send(json.dumps(client.voice_clients, default=lambda o: o.__dict__))
 
 
 async def downloadmp3(link):
