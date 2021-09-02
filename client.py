@@ -144,7 +144,7 @@ async def NHPLoop(channel, args): # get 5 codes of popular art on main page
   # freqList, list is in its name but actually its just element that contains --freq=something
   freqList = [arg for arg in args if "--freq" in arg]
   print(freqList)
-  if len(freqList) == 1 and "recent" in freqList[0]:
+  if len(freqList) == 1 and "recent" not in freqList[0]:
     freq = freqList[0][freqList[0].index("=") + 1:]
     prefix = "popular"
     if freq == "all-time": # all-time = https://nhentai.net/tag/{yourtag}/popular
