@@ -113,6 +113,7 @@ async def NHPLoop(channel, args): # get 5 codes of popular art on main page
   # --tag
   # --frequency
   # --amount    amount is like grab top # but can be in recent too
+  additionalSelector = ""
   if len(args) == 0:
     additionalSelector = ".index-popular"
     tag = "main"
