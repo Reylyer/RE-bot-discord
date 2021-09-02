@@ -82,6 +82,12 @@ class StoredCodes():
     self.codes = codes
 
 nhInstanceRunning = False
+
+@client.command()
+async def stopSeering(ctx):
+  global nhInstanceRunning
+  await ctx.send("ok")
+  nhInstanceRunning = False
 @client.command() #s-seerNH_here
 async def seerNH_here(ctx, *args):
     global nhInstanceRunning
@@ -117,6 +123,7 @@ async def NHPLoop(channel, args): # get 5 codes of popular art on main page
   print(helpList)
   if len(helpList) == 1:
     await channel.send("melakukan scrap di website kesayangan(nh)\n\nformat cmd: s-seerNH_here --tag=optional --freq=optional --amount=optional\nuntuk freq hanya bisa recent, today, week, all-time\nuntuk amount untuk main page 1-5, selain itu 1-25\npastikan tag benar ada! kalau ada spasi ganti dengan \"-\"")
+    nhInstanceRunning = False
     return
   # input tag
   tagList = [arg for arg in args if "--tag" in arg]
@@ -155,6 +162,7 @@ async def NHPLoop(channel, args): # get 5 codes of popular art on main page
     amount = int(amountList[0][amountList[0].index("=") + 1:])
     if amount < 1:
       await channel.send("ngajak berantem?")
+      nhInstanceRunning = False
       return
   else:
     amount = 5
