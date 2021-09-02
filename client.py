@@ -74,21 +74,18 @@ async def seerNH_here(ctx):
     
     # get channel where seerNH_here invoked
     channel = discord.utils.get(client.get_all_channels(), name=str(ctx.channel))
-    channelid = channel.id
 
     if nhInstanceRunning:
         ctx.send(f"seer sudah aktif")
     else:
         nhInstanceRunning = True
-        await NHPLoop(channelid)
+        await NHPLoop(channel)
 
 
-async def NHPLoop(channelid): # get 5 codes of popular art on main page
+async def NHPLoop(channel): # get 5 codes of popular art on main page
   global nhInstanceRunning
   global lastCodes
-  print(channelid)
   while nhInstanceRunning:
-    channel = client.get_channel(channelid)
     [codes, thumbnails, captions] = await getNHPopular()
     if len(lastCodes) == 0: # first time run
       for i in range(0, len(codes)):
