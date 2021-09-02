@@ -306,8 +306,10 @@ async def getTagsAndThumbnailAndPagesFromCode(code = "370616"):
   for a in anchorTags:
     tag = await page.evaluate('(ele) => ele.querySelector("span.name").innerText', a)
     tags.append(tag)
-  thumbnailURL = await page.evaluate("""(document) => document.querySelector(".lazyload").getAttribute("data-src")""", page)
-  pages =  await page.evaluate(""" (document) => document.querySelector("a.tag).querySelector("span.name").innerText """, page)
+  imgThumbnail = await page.querySelector(".lazyload")
+  thumbnailURL = await page.evaluate("""(ele) => ele.getAttribute("data-src")""", imgThumbnail)
+  anchorPages = await page.querySelector("a.tag")
+  pages =  await page.evaluate(""" (ele) => ele.querySelector("span.name").innerText """, anchorPages)
   await page.close()
   await browser.close()
   return [tags, thumbnailURL, pages]
