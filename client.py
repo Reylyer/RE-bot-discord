@@ -570,10 +570,10 @@ async def searchVideoByName(namaLagu):
 async def ip(ctx):
   await ctx.send("20.85.244.255")
 
-@client.command()
-async def run(ctx, code):
-  await ctx.send("HATI HATI MENGGUNAKAN COMMAND INI")
-  eval(code)
+# @client.command()
+# async def run(ctx, code):
+#   await ctx.send("HATI HATI MENGGUNAKAN COMMAND INI")
+#   eval(code)
 
 
 
