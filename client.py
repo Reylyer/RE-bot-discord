@@ -541,7 +541,7 @@ async def voice_status(ctx):
       await ctx.send(json.dumps(a))
     except:
       pass
-  await ctx.send(json.dumps(client.voice_clients, default=lambda o: o.__dict__))
+  await ctx.send(json.dumps([a for a in client.voice_clients]))
 
 
 async def downloadmp3(link):
