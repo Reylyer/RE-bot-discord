@@ -518,6 +518,10 @@ async def is_playing(ctx):
 @client.command()
 async def is_paused(ctx):
   await ctx.send(str(ctx.voice_client.is_paused()))
+  
+@client.command()
+async def voice_status(ctx):
+  await ctx.send(json.dumps([vc.__dict__ for vc in client.voice_clients]))
 
 
 async def downloadmp3(link):
