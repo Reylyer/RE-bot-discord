@@ -71,13 +71,11 @@ nhInstanceRunning = False
 @client.command() #s-seerNH_here
 async def seerNH_here(ctx):
     global nhInstanceRunning
-    print(f"{type(str(ctx.channel))}:{str(ctx.channel)}")
-    channelid = 0
-    # error ga dapet channel id
+    
+    # get channel where seerNH_here invoked
     channel = discord.utils.get(client.get_all_channels(), name=str(ctx.channel))
-
     channelid = channel.id
-    print(channelid)
+
     if nhInstanceRunning:
         ctx.send(f"seer sudah aktif")
     else:
