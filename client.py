@@ -252,6 +252,8 @@ async def NHPLoop(channel, args): # get 5 codes of popular art on main page
                 savedCode.codes.append(code)
               break
           lastCodes = codes
+      savedCodes = json.dumps([savedCode.__dict__ for savedCode in savedCodes])
+      print(savedCodes)
       f.seek(0)
       f.write(savedCodes)
       f.truncate()
