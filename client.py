@@ -175,7 +175,8 @@ async def NHPLoop(channel, args): # get 5 codes of popular art on main page
   subjectLink = "https://nhentai.net"
   if tag != "main":
     subjectLink +=  f"/tag/{tag}/{freq}"
-    
+  lastCodes = []
+  
   while nhInstanceRunning:
     with open("nhcode.json", "r+") as f:
       content = f.read()
@@ -197,7 +198,7 @@ async def NHPLoop(channel, args): # get 5 codes of popular art on main page
       # 
       print(f"codes = {savedCodes}")
       # resuming from saved codes
-      lastCodes = []
+      
       if firstCheck:
         for savedCode in savedCodes:
           if savedCode.tag == tag and savedCode.freq == freq:
@@ -206,7 +207,7 @@ async def NHPLoop(channel, args): # get 5 codes of popular art on main page
         firstCheck = False
       print(lastCodes)
       try:
-        [codes, thumbnails, captions] = await nhScraper(subjectLink, additionalSelector, amount)
+        [codes, captions] = await nhScraper(subjectLink, additionalSelector, amount)
       except Exception as e:
         await channel.send(f"some error has occurred\nError message:{e}")
         return
@@ -215,10 +216,11 @@ async def NHPLoop(channel, args): # get 5 codes of popular art on main page
           # https://stackoverflow.com/questions/64527464/clickable-link-inside-message-discord-py
           tags = await getTagsFromCode(codes[i])
           embed = discord.Embed()
-          if "http" not in thumbnails[i]:
-            await channel.send(f"can't load the thumbnail, thumbnail fed: {thumbnails[i]}")
+          thumbnail = f"https://t.nhentai.net/galleries/{codes[i]}/cover.jpg"
+          if "http" not in thumbnail:
+            await channel.send(f"can't load the thumbnail, thumbnail fed: {thumbnail}")
           else:
-            embed.set_image(url=thumbnails[i])
+            embed.set_image(url=thumbnail)
           embed.description = f"{captions[i]}\n\nTags: •{' •'.join(tags)}\n\n[#{codes[i]}](https://nhentai.net/g/{codes[i]})."
           await channel.send(embed=embed)
         lastCodes = codes
@@ -234,13 +236,15 @@ async def NHPLoop(channel, args): # get 5 codes of popular art on main page
           else:
             codeBeda.append(codes[i])
             adaBeda = True
+            tags = await getTagsFromCode(codes[i])
             embed = discord.Embed()
-            print(thumbnails[i])
+            thumbnail = f"https://t.nhentai.net/galleries/{codes[i]}/cover.jpg"
+            print(thumbnail)
             print("\n")
-            if "http" not in thumbnails[i]:
-              await channel.send(f"can't load the thumbnail, thumbnail fed: {thumbnails[i]}")
+            if "http" not in thumbnail:
+              await channel.send(f"can't load the thumbnail, thumbnail fed: {thumbnail}")
             else:
-              embed.set_image(url=thumbnails[i])
+              embed.set_image(url=thumbnail)
             embed.description = f"{captions[i]}\n\nTags: •{' •'.join(tags)}\n\n[#{codes[i]}](https://nhentai.net/g/{codes[i]})."
             await channel.send(embed=embed)
         if not adaBeda:
@@ -272,7 +276,7 @@ async def nhScraper(subjectLink, additionalSelector, amount):
   # buat list yang isinya anchor dari karya popular
   subjectAnchor = await subjectDiv.querySelectorAll(".cover")
   codes = []
-  thumbnails = []
+  #thumbnails = []
   captions = []
   if amount > len(subjectAnchor):
     amount = len(subjectAnchor)
@@ -281,17 +285,17 @@ async def nhScraper(subjectLink, additionalSelector, amount):
     code = await page.evaluate('(ele) => ele.getAttribute("href")', subjectAnchor[i])
     code = code[3:-1]
 
-    thumbnailURL = await page.evaluate('(ele) => ele.querySelector("img").getAttribute("src")', subjectAnchor[i])
+    #thumbnailURL = await page.evaluate('(ele) => ele.querySelector("img").getAttribute("src")', subjectAnchor[i])
     caption = await page.evaluate('(ele) => ele.querySelector("div").innerText', subjectAnchor[i])
 
-    print(thumbnailURL)
+    #print(thumbnailURL)
     print(code)
     codes.append(code)
-    thumbnails.append(thumbnailURL)
+    #thumbnails.append(thumbnailURL)
     captions.append(caption)
     
   await browser.close()
-  return [codes, thumbnails, captions]
+  return [codes, captions]
 
 async def getTagsFromCode(code = "370616"):
   browser = await launch(ignoreHTTPSErrors = True, headless = True, args=["--no-sandbox"])
