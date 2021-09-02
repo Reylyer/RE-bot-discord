@@ -5,6 +5,7 @@ import discord
 import asyncio
 import json
 import os
+import datetime
 from types import SimpleNamespace
 import youtube_dl
 import os
@@ -294,8 +295,10 @@ async def credential_check_of(mahasiswas, idTarget):
 
 
 # all about voice channel
+vc = 0
 @client.command()
 async def play(ctx, *linkYoutubeOrSongName):
+  global vc
   # grab the user who sent the command
   user=ctx.message.author
   voice_channel=user.voice.channel
@@ -309,25 +312,32 @@ async def play(ctx, *linkYoutubeOrSongName):
     
   # only play music if user is in a voice channel
   if voice_channel!= None:
-      # download
-      await ctx.send(f"downloading: {linkYoutubeOrSongName}")
-      try:
-        f = open("music.mp3")
-        os.remove("music.mp3")
-      except:
-        pass
-      print(linkYoutubeOrSongName)
-      await downloadmp3(linkYoutubeOrSongName)
-      
-      # create StreamPlayer
-      vc= await voice_channel.connect()
-      vc.play(discord.FFmpegPCMAudio('test'), after=lambda e: print("done", e))
-      #player = vc.create_ffmpeg_player('test.m4a', after=lambda: print('done'))
-      while vc.is_playing():
-          await asyncio.sleep(1)
-      # disconnect after the player has finished
-      vc.stop()
-      await vc.disconnect()
+    channel = ctx.author.voice.channel
+    if vc == 0:
+      vc = await voice_channel.connect()
+    #vc = ctx.voice_client
+
+    # download
+    await ctx.send(f"downloading: {linkYoutubeOrSongName}")
+    try:
+      f = open("music.mp3")
+      os.remove("music.mp3")
+    except:
+      pass
+    print(linkYoutubeOrSongName)
+    meta = await downloadmp3(linkYoutubeOrSongName)
+    await ctx.send(f"Playing: {meta['title']}\nUploader: {meta['uploader']}\nDuration: {str(datetime.timedelta(seconds=meta['duration']))}")
+
+    # create StreamPlayer
+    # if not user.voice.is_connected():
+    
+    vc.play(discord.FFmpegPCMAudio('music.mp3'), after=lambda e: print("done", e))
+    #player = vc.create_ffmpeg_player('test.m4a', after=lambda: print('done'))
+    while vc.is_playing():
+        await asyncio.sleep(1)
+    # disconnect after the player has finished
+    vc.stop()
+    # await vc.disconnect()
   else:
       await client.say('User is not in a channel.')
 
@@ -338,6 +348,25 @@ async def join(ctx):
 @client.command()
 async def leave(ctx):
     await ctx.voice_client.disconnect()
+@client.command()
+async def pause(ctx):
+  await ctx.voice_client.pause()
+@client.command()
+async def resume(ctx):
+  await ctx.voice_client.resume()
+@client.command()
+async def stop(ctx):
+  await ctx.voice_client.stop()
+@client.command()
+async def is_connected(ctx):
+  await ctx.send(str(ctx.voice_client.is_connected()))
+@client.command()
+async def is_playing(ctx):
+  await ctx.send(str(ctx.voice_client.is_playing()))
+@client.command()
+async def is_paused(ctx):
+  await ctx.send(str(ctx.voice_client.is_paused()))
+
 
 async def downloadmp3(link):
   ydl_opts = {
@@ -351,9 +380,11 @@ async def downloadmp3(link):
   }
   with youtube_dl.YoutubeDL(ydl_opts) as ydl:
       ydl.download([link])
+      meta = ydl.extract_info(link)
+      return meta
 
 
-async def getInfoYoutube(namaLagu):
+async def getInfoYoutube(linkYoutubeOrSongName):
   """mengembalikan informasi video\n
   url\n
   judul\n

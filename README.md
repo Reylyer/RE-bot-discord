@@ -13,10 +13,10 @@ see bot in testing: https://discord.gg/CvvJuAQaXh
 
 
 ## music player
-- search
+- search ✅
 - pause
 - skip
-- song info
+- song info (soon)
 - queue
 - remove queue
 - reset queue
