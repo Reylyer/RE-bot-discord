@@ -96,7 +96,7 @@ async def seerNH_here(ctx, *args):
     channel = discord.utils.get(client.get_all_channels(), name=str(ctx.channel))
 
     if nhInstanceRunning:
-        ctx.send(f"seer sudah aktif")
+        await ctx.send(f"seer sudah aktif")
     else:
         nhInstanceRunning = True
         await NHPLoop(channel, args)
