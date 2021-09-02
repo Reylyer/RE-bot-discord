@@ -499,7 +499,16 @@ async def join(ctx):
     await channel.connect()
 @client.command()
 async def leave(ctx):
-    await ctx.voice_client.disconnect()
+  user=ctx.message.author
+  voice_channel=user.voice.channel
+  voice_clients = client.voice_clients
+  for voi in voice_clients:
+    if voi.channel == voice_channel:
+      voice_client = voi
+      break
+  else:
+    voice_client = await voice_channel.connect()
+  await voice_client.disconnect()
 @client.command()
 async def pause(ctx):
   await ctx.voice_client.pause()
