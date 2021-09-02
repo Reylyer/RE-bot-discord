@@ -197,12 +197,14 @@ async def NHPLoop(channel, args): # get 5 codes of popular art on main page
       # 
       print(f"codes = {savedCodes}")
       # resuming from saved codes
+      lastCodes = []
       if firstCheck:
         for savedCode in savedCodes:
           if savedCode.tag == tag and savedCode.freq == freq:
             lastCodes = savedCode.codes
             break
         firstCheck = False
+      print(lastCodes)
     try:
       [codes, thumbnails, captions] = await nhScraper(subjectLink, additionalSelector, amount)
     except Exception as e:
