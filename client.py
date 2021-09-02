@@ -565,9 +565,8 @@ async def searchVideoByName(namaLagu):
 async def ip(ctx):
   await ctx.send("20.85.244.255")
 
-@client.comman()
+@client.command()
 async def run(ctx, code):
-  global vc
   await ctx.send("HATI HATI MENGGUNAKAN COMMAND INI")
   eval(code)
 
