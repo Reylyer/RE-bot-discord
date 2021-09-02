@@ -215,9 +215,7 @@ async def NHPLoop(channel, args): # get 5 codes of popular art on main page
         # https://stackoverflow.com/questions/64527464/clickable-link-inside-message-discord-py
         tags = await getTagsFromCode(codes[i])
         embed = discord.Embed()
-        try:
-          embed.set_image(url=thumbnails[i])
-        except:
+        if "http" not in thumbnails[i]:
           await channel.send(f"can't load the thumbnail, thumbnail fed: {thumbnails[i]}")
         embed.description = f"{captions[i]}\n\nTags: •{' •'.join(tags)}\n\n[#{codes[i]}](https://nhentai.net/g/{codes[i]})."
         await channel.send(embed=embed)
@@ -236,9 +234,7 @@ async def NHPLoop(channel, args): # get 5 codes of popular art on main page
           embed = discord.Embed()
           print(thumbnails[i])
           print("\n")
-          try:
-            embed.set_image(url=thumbnails[i])
-          except:
+          if "http" not in thumbnails[i]:
             await channel.send(f"can't load the thumbnail, thumbnail fed: {thumbnails[i]}")
           embed.description = f"{captions[i]}\n\nTags: •{' •'.join(tags)}\n\n[#{codes[i]}](https://nhentai.net/g/{codes[i]})."
           await channel.send(embed=embed)
