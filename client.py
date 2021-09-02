@@ -457,9 +457,14 @@ async def play(ctx, *linkYoutubeOrSongName):
   if voice_channel!= None:
     try:
       # https://discordpy.readthedocs.io/en/stable/api.html#discord.VoiceClient
-      voice_client = ctx.author.voice
-      if not voice_client.is_connected():
+      voice_clients = client.voice_clients
+      for voi in voice_clients:
+        if voi.channel == voice_channel:
+          voice_client = voi
+          break
+      else:
         voice_client = await voice_channel.connect()
+      
       # vc = ctx.voice_client
 
       # download
@@ -486,7 +491,7 @@ async def play(ctx, *linkYoutubeOrSongName):
     except Exception as e:
       await ctx.send(e)
   else:
-      await client.say('User is not in a channel.')
+      await ctx.send('User is not in a channel.')
 
 @client.command()
 async def join(ctx):
