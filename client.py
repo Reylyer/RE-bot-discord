@@ -205,58 +205,58 @@ async def NHPLoop(channel, args): # get 5 codes of popular art on main page
             break
         firstCheck = False
       print(lastCodes)
-    try:
-      [codes, thumbnails, captions] = await nhScraper(subjectLink, additionalSelector, amount)
-    except Exception as e:
-      await channel.send(f"some error has occurred\nError message:{e}")
-      return
-    if len(lastCodes) == 0: # first time run on certain tag and freq
-      for i in range(0, len(codes)):
-        # https://stackoverflow.com/questions/64527464/clickable-link-inside-message-discord-py
-        tags = await getTagsFromCode(codes[i])
-        embed = discord.Embed()
-        if "http" not in thumbnails[i]:
-          await channel.send(f"can't load the thumbnail, thumbnail fed: {thumbnails[i]}")
-        else:
-          embed.set_image(url=thumbnails[i])
-        embed.description = f"{captions[i]}\n\nTags: •{' •'.join(tags)}\n\n[#{codes[i]}](https://nhentai.net/g/{codes[i]})."
-        await channel.send(embed=embed)
-      lastCodes = codes
-      newStoredCodes = StoredCodes(tag, freq, codes)
-      
-      savedCodes.append(newStoredCodes)
-    else: # in loop
-      adaBeda = False
-      codeBeda = []
-      for i in range(0, len(codes)):
-        if codes[i] in lastCodes:
-          pass
-        else:
-          codeBeda.append(codes[i])
-          adaBeda = True
+      try:
+        [codes, thumbnails, captions] = await nhScraper(subjectLink, additionalSelector, amount)
+      except Exception as e:
+        await channel.send(f"some error has occurred\nError message:{e}")
+        return
+      if len(lastCodes) == 0: # first time run on certain tag and freq
+        for i in range(0, len(codes)):
+          # https://stackoverflow.com/questions/64527464/clickable-link-inside-message-discord-py
+          tags = await getTagsFromCode(codes[i])
           embed = discord.Embed()
-          print(thumbnails[i])
-          print("\n")
           if "http" not in thumbnails[i]:
             await channel.send(f"can't load the thumbnail, thumbnail fed: {thumbnails[i]}")
           else:
             embed.set_image(url=thumbnails[i])
           embed.description = f"{captions[i]}\n\nTags: •{' •'.join(tags)}\n\n[#{codes[i]}](https://nhentai.net/g/{codes[i]})."
           await channel.send(embed=embed)
-      if not adaBeda:
-        await channel.send("no new art in popular(main page)")
-      else:
-        for savedCode in savedCodes:
-          if savedCode.tag == tag and savedCode.freq == freq:
-            for code in codeBeda:
-              savedCode.codes.append(code)
-            break
         lastCodes = codes
-    f.seek(0)
-    f.write(savedCodes)
-    f.truncate()
-    f.close()
-    await asyncio.sleep(3600)
+        newStoredCodes = StoredCodes(tag, freq, codes)
+        
+        savedCodes.append(newStoredCodes)
+      else: # in loop
+        adaBeda = False
+        codeBeda = []
+        for i in range(0, len(codes)):
+          if codes[i] in lastCodes:
+            pass
+          else:
+            codeBeda.append(codes[i])
+            adaBeda = True
+            embed = discord.Embed()
+            print(thumbnails[i])
+            print("\n")
+            if "http" not in thumbnails[i]:
+              await channel.send(f"can't load the thumbnail, thumbnail fed: {thumbnails[i]}")
+            else:
+              embed.set_image(url=thumbnails[i])
+            embed.description = f"{captions[i]}\n\nTags: •{' •'.join(tags)}\n\n[#{codes[i]}](https://nhentai.net/g/{codes[i]})."
+            await channel.send(embed=embed)
+        if not adaBeda:
+          await channel.send("no new art in popular(main page)")
+        else:
+          for savedCode in savedCodes:
+            if savedCode.tag == tag and savedCode.freq == freq:
+              for code in codeBeda:
+                savedCode.codes.append(code)
+              break
+          lastCodes = codes
+      f.seek(0)
+      f.write(savedCodes)
+      f.truncate()
+      f.close()
+      await asyncio.sleep(3600)
 
 # this is the scrap function 
 async def nhScraper(subjectLink, additionalSelector, amount):
