@@ -204,8 +204,8 @@ async def NHPLoop(channel, args): # get 5 codes of popular art on main page
         firstCheck = False
     try:
       [codes, thumbnails, captions] = await nhScraper(subjectLink, additionalSelector, amount)
-    except:
-      await channel.send("some error has occured")
+    except Exception as e:
+      await channel.send(f"some error has occurred\nError message:{e}")
       return
     if len(lastCodes) == 0: # first time run on certain tag and freq
       for i in range(0, len(codes)):
