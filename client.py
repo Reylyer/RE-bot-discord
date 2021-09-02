@@ -111,7 +111,11 @@ async def NHPLoop(channel, args): # get 5 codes of popular art on main page
     tag = "main"
     freq = ""
     amount = 5
-    
+  
+  helpList = [arg for arg in args if "--help" in arg]
+  if len(helpList) == 1:
+    await channel.send("melakukan scrap di website kesayangan(nh)\n\nformat cmd: s-seerNH_here --tag=optional --freq=optional --amount=optional\nuntuk freq hanya bisa recent, today, week, all-time\nuntuk amount untuk main page 1-5, selain itu 1-25\npastikan tag benar ada! kalau ada spasi ganti dengan \"-\"")
+    return
   # input tag
   tagList = [arg for arg in args if "--tag" in arg]
   if len(tagList) == 1:
@@ -183,8 +187,11 @@ async def NHPLoop(channel, args): # get 5 codes of popular art on main page
             lastCodes = savedCode.codes
             break
         firstCheck = False
-      
-    [codes, thumbnails, captions] = await nhScraper(subjectLink, additionalSelector, amount)
+    try:
+      [codes, thumbnails, captions] = await nhScraper(subjectLink, additionalSelector, amount)
+    except:
+      await channel.send("some error has occured")
+      return
     if len(lastCodes) == 0: # first time run on certain tag and freq
       for i in range(0, len(codes)):
         # https://stackoverflow.com/questions/64527464/clickable-link-inside-message-discord-py
