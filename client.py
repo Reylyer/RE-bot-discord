@@ -97,6 +97,7 @@ async def seerNH_here(ctx, *args):
 
 
 async def NHPLoop(channel, args): # get 5 codes of popular art on main page
+  print(args)
   global nhInstanceRunning
   firstCheck = True
   # lowering the args
@@ -113,11 +114,13 @@ async def NHPLoop(channel, args): # get 5 codes of popular art on main page
     amount = 5
   
   helpList = [arg for arg in args if "--help" in arg]
+  print(helpList)
   if len(helpList) == 1:
     await channel.send("melakukan scrap di website kesayangan(nh)\n\nformat cmd: s-seerNH_here --tag=optional --freq=optional --amount=optional\nuntuk freq hanya bisa recent, today, week, all-time\nuntuk amount untuk main page 1-5, selain itu 1-25\npastikan tag benar ada! kalau ada spasi ganti dengan \"-\"")
     return
   # input tag
   tagList = [arg for arg in args if "--tag" in arg]
+  print(tagList)
   if len(tagList) == 1:
     tag = tagList[0][tagList[0].index("=") + 1 :]
   else:
@@ -132,6 +135,7 @@ async def NHPLoop(channel, args): # get 5 codes of popular art on main page
   # all-time
   # freqList, list is in its name but actually its just element that contains --freq=something
   freqList = [arg for arg in args if "--freq" in arg]
+  print(freqList)
   if len(freqList) == 1 and "recent" in freqList[0]:
     freq = freqList[0][freqList[0].index("=") + 1:]
     prefix = "popular"
