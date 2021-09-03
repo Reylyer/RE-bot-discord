@@ -467,7 +467,7 @@ async def play(ctx, *linkYoutubeOrSongName):
       #   voice_client = await voice_channel.connect()
       await ctx.send(f"typeof ctx.message.author.voice.channel = {type(ctx.message.author.voice.channel)}, with value = {ctx.message.author.voice.channel}")
       await ctx.send(f"ctx.guild.voice_channels = {ctx.guild.voice_channels}")
-      channel = discord.utils.get(ctx.guild.voice_channels, name=ctx.message.author.voice.channel)
+      channel = ctx.message.author.voice.channel
       voice_client = discord.utils.get(client.voice_clients, guild=ctx.guild)
       if not voice_client is None: #test if voice is 
         try:
