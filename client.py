@@ -458,14 +458,27 @@ async def play(ctx, *linkYoutubeOrSongName):
   if voice_channel!= None:
     try:
       # https://discordpy.readthedocs.io/en/stable/api.html#discord.VoiceClient
-      voice_clients = client.voice_clients
-      for voi in voice_clients:
-        if voi.channel == voice_channel:
-          voice_client = voi
-          break
+      # voice_clients = client.voice_clients
+      # for voi in voice_clients:
+      #   if voi.channel == voice_channel:
+      #     voice_client = voi
+      #     break
+      # else:
+      #   voice_client = await voice_channel.connect()
+        
+      channel = discord.utils.get(ctx.guild.voice_channels, name=ctx.message.author.voice.channel)
+      voice_client = discord.utils.get(client.voice_clients, guild=ctx.guild)
+      if not voice_client is None: #test if voice is 
+        try:
+          b = vars(voice_client)
+          await ctx.send(', '.join("%s: %s" % item for item in b.items()))
+        except Exception as e:
+          await ctx.send(e)
+        await ctx.send(f"connecting{ctx.message.author.voice.channel}")
+        if not voice_client.is_connected():
+          await channel.connect()
       else:
-        voice_client = await voice_channel.connect()
-      
+          await channel.connect()
       # vc = ctx.voice_client
 
       # download
@@ -542,7 +555,20 @@ async def voice_status(ctx):
       await ctx.send(', '.join("%s: %s" % item for item in b.items()))
     except:
       pass
-  await ctx.send(json.dumps([a for a in client.voice_clients]))
+
+  channel = discord.utils.get(ctx.guild.voice_channels, name=ctx.message.author.voice.channel)
+  voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
+  if not voice is None: #test if voice is 
+    try:
+      b = vars(voice)
+      await ctx.send(', '.join("%s: %s" % item for item in b.items()))
+    except Exception as e:
+      await ctx.send(e)
+    await ctx.send(f"connecting{ctx.message.author.voice.channel}")
+    if not voice.is_connected():
+      await channel.connect()
+  else:
+      await channel.connect()
 
 
 async def downloadmp3(link):
