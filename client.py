@@ -521,10 +521,11 @@ async def leave(ctx):
   for voi in voice_clients:
     if voi.channel == voice_channel:
       voice_client = voi
+      await voice_client.disconnect()
       break
   else:
-    voice_client = await voice_channel.connect()
-  await voice_client.disconnect()
+    pass
+  
 @client.command()
 async def pause(ctx):
   await ctx.voice_client.pause()
