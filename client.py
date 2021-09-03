@@ -11,6 +11,7 @@ import datetime
 from types import SimpleNamespace
 import youtube_dl
 import os
+from youtubesearchpython import VideosSearch
 
 #import time
 from discord.ext import commands
@@ -443,16 +444,17 @@ async def credential_check_of(mahasiswas, idTarget):
 
 # all about voice channel
 @client.command()
-async def play(ctx, *linkYoutubeOrSongName):
+async def play(ctx, *arg):
   # grab the user who sent the command
   user=ctx.message.author
   voice_channel=user.voice.channel
   
   # kalau bukan link
-  print(linkYoutubeOrSongName)
-  if not "youtu" in linkYoutubeOrSongName:
-    linkYoutubeOrSongName = "+".join(linkYoutubeOrSongName)
-    linkYoutubeOrSongName = await searchVideoByName(linkYoutubeOrSongName)
+  print(arg)
+  if not "youtu" in arg:
+    arg = " ".join(arg)
+    arg = await searchVideoByName(arg)
+    arg = arg[0].link
     
   # only play music if user is in a voice channel
   if voice_channel!= None:
@@ -491,15 +493,15 @@ async def play(ctx, *linkYoutubeOrSongName):
       # vc = ctx.voice_client
 
       # download
-      await ctx.send(f"downloading: {linkYoutubeOrSongName}")
+      await ctx.send(f"downloading: {arg}")
       try:
         f = open("music.mp3")
         os.remove("music.mp3")
       except:
         pass
-      print(linkYoutubeOrSongName)
+      print(arg)
       await ctx.send(f"voice_client = {voice_client}")
-      meta = await downloadmp3(linkYoutubeOrSongName)
+      meta = await downloadmp3(arg)
       await ctx.send(f"Playing: {meta['title']}\nUploader: {meta['uploader']}\nDuration: {str(datetime.timedelta(seconds=meta['duration']))}")
 
       # create StreamPlayer
@@ -607,19 +609,10 @@ async def getInfoYoutube(linkYoutubeOrSongName):
  
   
 async def searchVideoByName(namaLagu):
-  """return link
+  """ VideoSearch Object
   """
-  browser = await launch(ignoreHTTPSErrors = True, headless = True, args=["--no-sandbox"])
-  page = await browser.newPage()
-  await page.goto(f"https://www.youtube.com/results?search_query={namaLagu}")
-  print(page.url)
-  anchorTitles = await page.querySelectorAll("#video-title")
-  
-  subjectAnchor = anchorTitles[0]
-  
-  href = await page.evaluate('(ele) => ele.getAttribute("href")', subjectAnchor)
-  await browser.close()
-  return f"https://www.youtube.com{href}"
+  videosSearch = VideosSearch(namaLagu, limit = 2)
+  return videosSearch
 
 
 
