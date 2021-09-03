@@ -454,7 +454,7 @@ async def play(ctx, *arg):
   if not "youtu" in arg:
     arg = " ".join(arg)
     arg = await searchVideoByName(arg)
-    arg = arg[0].link
+    arg = arg.result[0].link
     
   # only play music if user is in a voice channel
   if voice_channel!= None:
