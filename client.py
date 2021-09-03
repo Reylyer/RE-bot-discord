@@ -465,6 +465,9 @@ async def play(ctx, *linkYoutubeOrSongName):
       #     break
       # else:
       #   voice_client = await voice_channel.connect()
+      
+      
+      # WHAT THE FUCK WITH THIS MESSY CODE
       await ctx.send(f"typeof ctx.message.author.voice.channel = {type(ctx.message.author.voice.channel)}, with value = {ctx.message.author.voice.channel}")
       await ctx.send(f"ctx.guild.voice_channels = {ctx.guild.voice_channels}")
       channel = ctx.message.author.voice.channel
@@ -480,7 +483,11 @@ async def play(ctx, *linkYoutubeOrSongName):
         if not voice_client.is_connected():
           voice_client = await channel.connect()
       else:
+        try:
           voice_client = await channel.connect()
+          await ctx.send(f"voice_client = {voice_client}")
+        except Exception as e:
+          await ctx.send(e)
       # vc = ctx.voice_client
 
       # download
@@ -491,12 +498,13 @@ async def play(ctx, *linkYoutubeOrSongName):
       except:
         pass
       print(linkYoutubeOrSongName)
+      await ctx.send(f"voice_client = {voice_client}")
       meta = await downloadmp3(linkYoutubeOrSongName)
       await ctx.send(f"Playing: {meta['title']}\nUploader: {meta['uploader']}\nDuration: {str(datetime.timedelta(seconds=meta['duration']))}")
 
       # create StreamPlayer
       # if not user.voice.is_connected():
-      
+      await ctx.send(f"voice_client = {voice_client}")
       voice_client.play(discord.FFmpegPCMAudio('music.mp3'), after=lambda e: print("done", e))
       #player = vc.create_ffmpeg_player('test.m4a', after=lambda: print('done'))
       while voice_client.is_playing():
