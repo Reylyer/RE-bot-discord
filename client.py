@@ -31,21 +31,21 @@ except:
     f.write(json.dumps([]))
     f.close()
     
-@client.event
-async def on_message(message):
-  with open("servers.json", "r") as f:
-    content = f.read()
-    servers = json.loads(content, object_hook= lambda o: SimpleNamespace(**o))
-    for server in servers:
-      if server.id == message.guild.id:
-        pass
-    else:
-      newClass = Server(message.guild.id)
-      servers.append(newClass)
-      f.seek(0)
-      f.write(servers)
-      f.truncate()
-    f.close()
+# @client.event
+# async def on_message(message):
+#   with open("servers.json", "r") as f:
+#     content = f.read()
+#     servers = json.loads(content, object_hook= lambda o: SimpleNamespace(**o))
+#     for server in servers:
+#       if server.id == message.guild.id:
+#         pass
+#     else:
+#       newClass = Server(message.guild.id)
+#       servers.append(newClass)
+#       f.seek(0)
+#       f.write(servers)
+#       f.truncate()
+#     f.close()
     
 
 # event
