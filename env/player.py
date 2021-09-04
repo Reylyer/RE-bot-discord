@@ -1,9 +1,19 @@
-import asyncio
-import discord
-import datetime
-import youtube_dl
+import asyncio, discord, datetime, youtube_dl, threading
 from youtubesearchpython import VideosSearch
-import os
+# import os
+
+class Song:
+  def __init__(self, metaInfo, queueOrder, link):
+    self.metaInfo = metaInfo
+    self.queueOrder = queueOrder
+    self.link = link
+
+    pass
+
+songQueue = []
+curQueue = 0
+queueLen = 0
+# 
 
 async def play(client, ctx, *arg):
   # grab the user who sent the command
@@ -18,7 +28,7 @@ async def play(client, ctx, *arg):
 
     arg = arg.result()["result"][0]["link"]
 
-    await ctx.send(arg)
+    # await ctx.send(arg)
     
   # only play music if user is in a voice channel
   if voice_channel!= None:
@@ -36,6 +46,7 @@ async def play(client, ctx, *arg):
       # WHAT THE FUCK WITH THIS MESSY CODE
       channel = ctx.message.author.voice.channel
       voice_client = discord.utils.get(client.voice_clients, guild=ctx.guild)
+      
       await ctx.send(f"voice_client = {voice_client}")
       if not voice_client is None: #test if voice is 
         try:
@@ -51,23 +62,33 @@ async def play(client, ctx, *arg):
           voice_client = await channel.connect()
         except Exception as e:
           await ctx.send(e)
-      # vc = ctx.voice_client
-
+      
+      
+      # try:
+      #   _ = open(f"music{curQueue}.mp3")
+      #   os.remove(f"music{curQueue}.mp3")
+      # except:
+      #   pass
+      
       # download
-      await ctx.send(f"downloading: {arg}")
-      try:
-        _ = open("music.mp3")
-        os.remove("music.mp3")
-      except:
-        pass
-      print(arg)
+      await ctx.send(f"downloading: <{arg}>")
       await ctx.send(f"voice_client = {voice_client}")
-      meta = await downloadmp3(arg)
-      await ctx.send(f"Playing: {meta['title']}\nUploader: {meta['uploader']}\nDuration: {str(datetime.timedelta(seconds=meta['duration']))}")
+      song = Song(downloadmp3(arg), curQueue, arg)
+      songQueue.append(song)
+      
+      # meta = downloadmp3(arg)
+      # expected : it will wait until the thread is finished(hopefully (pretty please (first run ok?)))
+      while len(['' for thread in threading.enumerate() if thread.name == arg]):
+        # thread.name is == youtube_link in this case arg
+        print([thr.name for thr in threading.enumerate()])
+        await asyncio.sleep(1)
+        
+      await ctx.send(f"Playing: {song.metaInfo['title']}\nUploader: {song.metaInfo['uploader']}\nDuration: {str(datetime.timedelta(seconds=song.metaInfo['duration']))}")
 
       # create StreamPlayer
       # if not user.voice.is_connected():
-      voice_client.play(discord.FFmpegPCMAudio('music.mp3'), after=lambda e: print("done", e))
+      voice_client.play(discord.FFmpegPCMAudio(f'music{curQueue}.mp3'), after=lambda e: print("done", e))
+      
       while voice_client.is_playing():
           await asyncio.sleep(1)
       # disconnect after the player has finished
@@ -79,6 +100,7 @@ async def play(client, ctx, *arg):
       await ctx.send('User is not in a channel.')
       
 async def downloadmp3(link):
+  global queueLen
   ydl_opts = {
       'format': 'bestaudio/best',
       'postprocessors': [{
@@ -86,12 +108,19 @@ async def downloadmp3(link):
           'preferredcodec': 'mp3',
           'preferredquality': '192',
       }],
-      'outtmpl':'music.mp3',
+      'outtmpl':f'music{queueLen}.mp3',
   }
+  queueLen +=1
   with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-      ydl.download([link])
-      meta = ydl.extract_info(link)
-      return meta
+    downloadThread = threading.Thread(target=ydl.download([link]))
+    meta = ydl.extract_info(link)
+    downloadThread.setName(meta['title'])
+    downloadThread.start()
+    return meta
+
+# In Progress
+async def addSongToQueue(arg):
+  return 
 
 async def voice_status(ctx, client):
   print(client.voice_clients)
@@ -119,7 +148,7 @@ async def voice_status(ctx, client):
   else:
       await channel.connect()
       
-async def getInfoYoutube(linkYoutubeOrSongName):
+def getInfoYoutube(linkYoutubeOrSongName):
   """mengembalikan informasi video\n
   url\n
   judul\n
@@ -127,8 +156,11 @@ async def getInfoYoutube(linkYoutubeOrSongName):
   """
  
   
-async def searchVideoByName(namaLagu):
+def searchVideoByName(namaLagu):
   """ VideoSearch Object
   """
   videosSearch = VideosSearch(namaLagu, limit = 2)
   return videosSearch
+
+def getThreadCount():
+  return threading.active_count(), threading.current_thread()

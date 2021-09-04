@@ -7,9 +7,7 @@ textCodeDict = {
   420: "NO CREDENTIAL",
   13: "NOT ENOUGH INFORMATION"
 }
-class Server():
-  def __init__(self) -> None:
-    pass
+
 
 class Mahasiswa(): #kelas mahasiswa
   def __init__(self, id, mail = "NOT SET", password = "NOT SET"):

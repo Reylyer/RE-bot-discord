@@ -1,4 +1,5 @@
 from __future__ import unicode_literals
+from types import SimpleNamespace
 #%%
 import discord
 import json
@@ -14,6 +15,38 @@ client = commands.Bot(command_prefix="s-")
 # environment variable
 load_dotenv('.env')
 TOKEN = os.getenv('TOKEN')
+
+class Server():
+  def __init__(self, id):
+    self.id = id
+    
+  nhSession = []
+  savedCodes = []
+  
+try:
+  f = open("servers.json")
+  f.close()
+except:
+  with open("servers.json", "w") as f:
+    f.write(json.dumps([]))
+    f.close()
+    
+@client.event
+async def on_message(message):
+  with open("servers.json", "r") as f:
+    content = f.read()
+    servers = json.loads(content, object_hook= lambda o: SimpleNamespace(**o))
+    for server in servers:
+      if server.id == message.guild.id:
+        pass
+    else:
+      newClass = Server(message.guild.id)
+      servers.append(newClass)
+      f.seek(0)
+      f.write(servers)
+      f.truncate()
+    f.close()
+    
 
 # event
 @client.event # bot online (saat .py ini dijalankan)
