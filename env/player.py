@@ -80,6 +80,8 @@ async def play(client, ctx, *arg):
       # meta = downloadmp3(arg)
       # expected : it will wait until the thread is finished(hopefully (pretty please (first run ok?)))
       await ctx.send("before thread check")
+      await ctx.send(f"type of threading.enumerate() = {type(threading.enumerate())}")
+      await ctx.send(threading.enumerate())
       while len(['' for thread in threading.enumerate() if thread.name == arg]):
         # thread.name is == youtube_link in this case arg
         print([thr.name for thr in threading.enumerate()])
