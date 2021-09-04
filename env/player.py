@@ -97,6 +97,10 @@ async def play(client, ctx, *arg):
       # if not user.voice.is_connected():
       voice_client.play(discord.FFmpegPCMAudio(f'music{curQueue}.mp3'), after=lambda e: print("done", e))
       
+      if voice_client.is_playing():
+        while voice_client.is_playing():
+          await asyncio.sleep()
+      
       while voice_client.is_playing():
           await asyncio.sleep(1)
       # disconnect after the player has finished
