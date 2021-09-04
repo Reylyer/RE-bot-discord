@@ -84,7 +84,7 @@ async def play(client, ctx, *arg):
       await ctx.send(threading.enumerate())
       while len(['' for thread in threading.enumerate() if thread.name == arg]):
         # thread.name is == youtube_link in this case arg
-        print([thr.name for thr in threading.enumerate()])
+        # print([thr.name for thr in threading.enumerate()])
         await asyncio.sleep(1)
       await ctx.send("after thread check")
         
