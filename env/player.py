@@ -84,10 +84,10 @@ async def play(client, ctx, *arg):
       await ctx.send(f"type of threading.enumerate() = {type(threading.enumerate())}")
       await ctx.send(threading.enumerate())
       await ctx.send(threading.enumerate()[0].is_alive())
-      #while len(['' for thread in threading.enumerate() if thread.name == arg]):
+      while len(['' for thread in threading.enumerate() if thread.name == arg]):
         # thread.name is == youtube_link in this case arg
         # print([thr.name for thr in threading.enumerate()])
-      while threading.enumerate()[0].is_alive():
+      #while threading.enumerate()[0].is_alive():
         await asyncio.sleep(1)
       await ctx.send("after thread check")
       await ctx.send("finish downloading")
