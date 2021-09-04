@@ -3,6 +3,7 @@ import discord
 import datetime
 import youtube_dl
 from youtubesearchpython import VideosSearch
+import os
 
 async def play(client, ctx, *arg):
   # grab the user who sent the command
@@ -33,8 +34,6 @@ async def play(client, ctx, *arg):
       
       
       # WHAT THE FUCK WITH THIS MESSY CODE
-      await ctx.send(f"typeof ctx.message.author.voice.channel = {type(ctx.message.author.voice.channel)}, with value = {ctx.message.author.voice.channel}")
-      await ctx.send(f"ctx.guild.voice_channels = {ctx.guild.voice_channels}")
       channel = ctx.message.author.voice.channel
       voice_client = discord.utils.get(client.voice_clients, guild=ctx.guild)
       await ctx.send(f"voice_client = {voice_client}")
@@ -44,13 +43,12 @@ async def play(client, ctx, *arg):
           await ctx.send(', '.join("%s: %s" % item for item in b.items()))
         except Exception as e:
           await ctx.send(e)
-        await ctx.send(f"connecting{ctx.message.author.voice.channel}")
+        await ctx.send(f"connecting to {ctx.message.author.voice.channel} voice channel")
         if not voice_client.is_connected():
           voice_client = await channel.connect()
       else:
         try:
           voice_client = await channel.connect()
-          await ctx.send(f"voice_client = {voice_client}")
         except Exception as e:
           await ctx.send(e)
       # vc = ctx.voice_client
@@ -58,7 +56,7 @@ async def play(client, ctx, *arg):
       # download
       await ctx.send(f"downloading: {arg}")
       try:
-        f = open("music.mp3")
+        _ = open("music.mp3")
         os.remove("music.mp3")
       except:
         pass
@@ -69,9 +67,7 @@ async def play(client, ctx, *arg):
 
       # create StreamPlayer
       # if not user.voice.is_connected():
-      await ctx.send(f"voice_client = {voice_client}")
       voice_client.play(discord.FFmpegPCMAudio('music.mp3'), after=lambda e: print("done", e))
-      #player = vc.create_ffmpeg_player('test.m4a', after=lambda: print('done'))
       while voice_client.is_playing():
           await asyncio.sleep(1)
       # disconnect after the player has finished
