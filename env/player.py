@@ -17,6 +17,7 @@ queueLen = 0
 # 
 
 async def play(client, ctx, *arg):
+  global curQueue
   # grab the user who sent the command
   user=ctx.message.author
   voice_channel=user.voice.channel
@@ -101,7 +102,7 @@ async def play(client, ctx, *arg):
       # create StreamPlayer
       # if not user.voice.is_connected():
       voice_client.play(discord.FFmpegPCMAudio(f'music{curQueue}.mp3'), after=lambda e: print("done", e))
-      
+      curQueue+=1
       
       while voice_client.is_playing():
           await asyncio.sleep(1)
