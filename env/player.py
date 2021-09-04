@@ -24,7 +24,7 @@ async def play(client, ctx, *arg):
   print(arg)
   if not "youtu" in arg:
     arg = " ".join(arg)
-    arg = await searchVideoByName(arg)
+    arg = searchVideoByName(arg)
 
     arg = arg.result()["result"][0]["link"]
 
