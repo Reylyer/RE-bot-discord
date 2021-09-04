@@ -107,7 +107,7 @@ async def play(client, ctx, *arg):
   else:
       await ctx.send('User is not in a channel.')
       
-async def downloadmp3(link):
+def downloadmp3(link):
   global queueLen
   ydl_opts = {
       'format': 'bestaudio/best',
