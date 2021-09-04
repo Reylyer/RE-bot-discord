@@ -43,13 +43,14 @@ async def set_credential(ctx, properties, value):
               mahasiswa.password = value
             # eval(f"mahasiswa.{properties} = \"{value}\"")
             censored = '\*'.join(['' for _ in range(0, len(value) -2)])
-            await ctx.message.delete()
+            
             await ctx.send(f"{properties} telah diset menjadi {censored}{value[-2]}{value[-1]}")
             break
 
         else:
           print(ctx.author.id)
           eval(f"mahasiswas.append(Mahasiswa(ctx.author.id, {properties} = '{value}'))")
+        await ctx.message.delete()
         print(mahasiswas)
         mahasiswas = json.dumps([mahasiswa.__dict__ for mahasiswa in mahasiswas])
         print(mahasiswas)
