@@ -1,4 +1,5 @@
 import asyncio, discord, datetime, youtube_dl, threading
+from discord.enums import Theme
 from youtubesearchpython import VideosSearch
 # import os
 
@@ -74,7 +75,7 @@ async def play(client, ctx, *arg):
       await ctx.send(f"downloading: <{arg}>")
       await ctx.send(f"voice_client = {voice_client}")
       song = Song(downloadmp3(arg), curQueue, arg)
-      await ctx.send("finish downloading")
+      
       songQueue.append(song)
       
       # meta = downloadmp3(arg)
@@ -82,12 +83,13 @@ async def play(client, ctx, *arg):
       await ctx.send("before thread check")
       await ctx.send(f"type of threading.enumerate() = {type(threading.enumerate())}")
       await ctx.send(threading.enumerate())
+      await ctx.send(threading.enumerate()[0].is_alive())
       while len(['' for thread in threading.enumerate() if thread.name == arg]):
         # thread.name is == youtube_link in this case arg
         # print([thr.name for thr in threading.enumerate()])
         await asyncio.sleep(1)
       await ctx.send("after thread check")
-        
+      await ctx.send("finish downloading")
       await ctx.send(f"Playing: {song.metaInfo['title']}\nUploader: {song.metaInfo['uploader']}\nDuration: {str(datetime.timedelta(seconds=song.metaInfo['duration']))}")
 
       # create StreamPlayer
