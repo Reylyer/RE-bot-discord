@@ -93,13 +93,15 @@ async def play(client, ctx, *arg):
       await ctx.send("finish downloading")
       await ctx.send(f"Playing: {song.metaInfo['title']}\nUploader: {song.metaInfo['uploader']}\nDuration: {str(datetime.timedelta(seconds=song.metaInfo['duration']))}")
 
+      # wait for player stop
+      if voice_client.is_playing():
+        while voice_client.is_playing():
+          await asyncio.sleep(1)
+      
       # create StreamPlayer
       # if not user.voice.is_connected():
       voice_client.play(discord.FFmpegPCMAudio(f'music{curQueue}.mp3'), after=lambda e: print("done", e))
       
-      if voice_client.is_playing():
-        while voice_client.is_playing():
-          await asyncio.sleep()
       
       while voice_client.is_playing():
           await asyncio.sleep(1)
