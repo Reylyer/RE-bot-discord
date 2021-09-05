@@ -10,7 +10,7 @@ from env import *
 from discord.ext import commands
 from dotenv import load_dotenv
 # command prefix s-
-client = commands.Bot(command_prefix="s-")
+client = commands.Bot(command_prefix="z-")
 
 # environment variable
 load_dotenv('.env')
@@ -116,9 +116,6 @@ async def seerNH_here(ctx, *args):
 
 
 
-
-
-
 #ABSEN UNDIP SET
 
 
@@ -149,9 +146,6 @@ async def sendMonitorCovid(ctx):
     pass
   
 
-
-
-
 # all about voice channel
 @client.command()
 async def play(ctx, *arg):
@@ -171,8 +165,15 @@ async def leave(ctx):
       voice_client = voi
       await voice_client.disconnect()
       break
+    await player.clearQueue()
   else:
     pass
+@client.command()
+async def queue(ctx):
+  await player.queue(ctx)
+@client.command()
+async def clearq(ctx):
+  await player.clearQueue(ctx)
   
 @client.command()
 async def pause(ctx):
@@ -201,6 +202,9 @@ async def voice_status(ctx):
 @client.command() # set pass n mail
 async def ip(ctx):
   await ctx.send("20.85.244.255")
+
+
+
 
 
 

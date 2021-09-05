@@ -1,7 +1,7 @@
 import asyncio, discord, datetime, youtube_dl, threading
 from discord.enums import Theme
 from youtubesearchpython import VideosSearch
-# import os
+import os
 
 class Song:
   def __init__(self, metaInfo, queueOrder, link):
@@ -65,18 +65,14 @@ async def play(client, ctx, *arg):
         except Exception as e:
           await ctx.send(e)
       
-      
-      # try:
-      #   _ = open(f"music{curQueue}.mp3")
-      #   os.remove(f"music{curQueue}.mp3")
-      # except:
-      #   pass
-      
       # download
       await ctx.send(f"downloading: <{arg}>")
       await ctx.send(f"voice_client = {voice_client}")
+      try:
+        os.remove(f"music{curQueue}.mp3")
+      except:
+        pass
       song = Song(downloadmp3(arg), curQueue, arg)
-      
       songQueue.append(song)
       
       # meta = downloadmp3(arg)
@@ -85,9 +81,11 @@ async def play(client, ctx, *arg):
       await ctx.send(f"type of threading.enumerate() = {type(threading.enumerate())}")
       await ctx.send(threading.enumerate())
       await ctx.send(threading.enumerate()[0].is_alive())
-      while len(['' for thread in threading.enumerate() if thread.name == arg]):
-        # thread.name is == youtube_link in this case arg
-        # print([thr.name for thr in threading.enumerate()])
+      for thread in threading.enumerate():
+        if thread.name == f"threadXXXgaming{curQueue}":
+          await asyncio.sleep(1)
+          await ctx.send(f"hey! thread with name {thread.name} is still alive\nthread.is_alive value = {thread.is_alive()}")
+
       #while threading.enumerate()[0].is_alive():
         await asyncio.sleep(1)
       await ctx.send("after thread check")
@@ -100,6 +98,7 @@ async def play(client, ctx, *arg):
           await asyncio.sleep(1)
       
       # create StreamPlayer
+      # Note: stupid solution but at least it worked
       # if not user.voice.is_connected():
       voice_client.play(discord.FFmpegPCMAudio(f'music{curQueue}.mp3'), after=lambda e: print("done", e))
       curQueue+=1
@@ -113,6 +112,7 @@ async def play(client, ctx, *arg):
       await ctx.send(e)
   else:
       await ctx.send('User is not in a channel.')
+      await ctx.send(ctx.message.author.voice.channel)
       
 def downloadmp3(link):
   global queueLen
@@ -127,15 +127,55 @@ def downloadmp3(link):
   }
   queueLen +=1
   with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-    downloadThread = threading.Thread(target=ydl.download([link]))
+    downloadThread = threading.Thread(target=ydl.download, args=([link]), name="threadXXXgaming{queueLen}")
     meta = ydl.extract_info(link)
-    downloadThread.setName(meta['title'])
-    downloadThread.start()
+    try:
+      downloadThread.start()
+    except Exception as e:
+      print("error when running thread({downloadThread.name}) error message: {e}")
+      
     return meta
 
 # In Progress
 async def addSongToQueue(arg):
   return 
+
+async def clearQueue(ctx):
+  global queueLen, curQueue, songQueue
+  songCleared = 0
+  try:
+    await ctx.send(f"active threads : {threading.active_count()}")
+    for thread in threading.enumerate():
+      await ctx.send(f"{thread.name}, alive: {thread.is_alive()}")
+  except Exception as e:
+    await ctx.send(e)
+  try:
+    for songNum in range(0,queueLen):
+      #check if the song is playing or the list is empty
+      if(curQueue != songNum): 
+        try:
+          os.remove(f"music{songNum}.mp3")
+          songCleared+=1
+        except Exception as e:
+          await ctx.send(f"error message : {e}")
+          await ctx.send(f"queue number {songNum} failed to be erased")
+    songQueue = []
+    curQueue=0
+    await ctx.send(f"{songCleared} songs removed from queue")
+    queueLen=0
+  except:
+    await ctx.send("clear queue failed")
+    pass
+  return
+
+async def queue(ctx):
+  try:
+    for song in songQueue:
+      await ctx.send(f"{song}. {song.metaInfo['title']}")
+  except:
+    await ctx.send("No song in queue")
+  return
+
 
 async def voice_status(ctx, client):
   print(client.voice_clients)
