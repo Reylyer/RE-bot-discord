@@ -11,3 +11,4 @@ test.json
 server
 nhcode.json
 servers.json
+env/__pycache__

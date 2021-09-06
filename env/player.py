@@ -15,7 +15,7 @@ try:
   os.mkdir('server')
 except:
   pass
-serverDir = (f"{os.getcwd()}\server")
+serverDir = (f"{os.getcwd()}/server")
 songQueue = []
 curQueue = 0
 queueLen = 0
@@ -91,7 +91,7 @@ async def play(client, ctx, *arg):
       for thread in threading.enumerate():
         if thread.name == f"threadXXXgaming{curQueue}":
           await asyncio.sleep(1)
-          await ctx.send(f"hey! thread with name {thread.name} is still alive\nthread.is_alive value = {thread.is_alive()}")
+          await ctx.send(f"hey! thread with name {thread.name} is still alive/nthread.is_alive value = {thread.is_alive()}")
 
       #while threading.enumerate()[0].is_alive():
         await asyncio.sleep(1)
@@ -107,7 +107,7 @@ async def play(client, ctx, *arg):
       # create StreamPlayer
       # Note: stupid solution but at least it worked
       # if not user.voice.is_connected():
-      voice_client.play(discord.FFmpegPCMAudio(f'server\{serverID}\music{curQueue}.mp3'), after=lambda e: print("done", e))
+      voice_client.play(discord.FFmpegPCMAudio(f'server/{serverID}/music{curQueue}.mp3'), after=lambda e: print("done", e))
       curQueue+=1
       
       while voice_client.is_playing():
@@ -130,7 +130,7 @@ def downloadmp3(link, serverid):
           'preferredcodec': 'mp3',
           'preferredquality': '192',
       }],
-      'outtmpl':f'server\{serverid}\music{queueLen}.mp3',
+      'outtmpl':f'server/{serverid}/music{queueLen}.mp3',
   }
   queueLen +=1
   with youtube_dl.YoutubeDL(ydl_opts) as ydl:
@@ -147,7 +147,7 @@ def downloadmp3(link, serverid):
 async def addSongToQueue(arg):
   return 
 
-async def clearQueue(ctx):
+async def clearQueue(ctx, serverid):
   global queueLen, curQueue, songQueue
   songCleared = 0
   try:
@@ -161,7 +161,7 @@ async def clearQueue(ctx):
       #check if the song is playing or the list is empty
       if(curQueue != songNum): 
         try:
-          os.remove(f"music{songNum}.mp3")
+          os.remove(f"server/{serverid}/music{songNum}.mp3")
           songCleared+=1
         except Exception as e:
           await ctx.send(f"error message : {e}")
@@ -228,7 +228,7 @@ def checkQueueResidue(serverid):
     except:
       pass
     os.chdir(os.pardir)
-    os.remove(f'server\{serverid}\music{curQueue}')
+    os.remove(f'server/{serverid}/music{curQueue}')
   except:
     dir = "no queue residue found"
   return dir
