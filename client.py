@@ -102,7 +102,6 @@ except:
     f.write(json.dumps([]))
     f.close()
 
-
 nhInstanceRunning = False
 
 @client.command()
