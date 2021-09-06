@@ -1,13 +1,13 @@
-import asyncio, discord, datetime, youtube_dl, threading
+import asyncio, discord, datetime, youtube_dl, threading, json
 from posixpath import pardir
 from discord.enums import Theme
 from youtubesearchpython import VideosSearch
 import os
+from types import SimpleNamespace
 
 class Song:
-  def __init__(self, metaInfo, queueOrder, link):
+  def __init__(self, metaInfo, link, queueOrder):
     self.metaInfo = metaInfo
-    self.queueOrder = queueOrder
     self.link = link
 
     pass
@@ -15,14 +15,13 @@ try:
   os.mkdir('server')
 except:
   pass
-serverDir = (f"{os.getcwd()}/server")
 songQueue = []
 curQueue = 0
-queueLen = 0
+queueLen = len(songQueue)
 # 
 
 async def play(client, ctx, *arg):
-  global curQueue
+  global curQueue, queueLen
   # grab the user who sent the command
   user=ctx.message.author
   voice_channel=user.voice.channel
@@ -57,11 +56,6 @@ async def play(client, ctx, *arg):
       
       await ctx.send(f"voice_client = {voice_client}")
       if not voice_client is None: #test if voice is 
-        try:
-          b = vars(voice_client)
-          await ctx.send(', '.join("%s: %s" % item for item in b.items()))
-        except Exception as e:
-          await ctx.send(e)
         await ctx.send(f"connecting to {ctx.message.author.voice.channel} voice channel")
         if not voice_client.is_connected():
           voice_client = await channel.connect()
@@ -74,22 +68,26 @@ async def play(client, ctx, *arg):
       # download
       await ctx.send(f"downloading: <{arg}>")
       await ctx.send(f"voice_client = {voice_client}")
-      dirMsg = checkQueueResidue(serverID)
+      dirMsg = checkQueueResidue(serverID, curQueue)
       if dirMsg:
         await ctx.send(dirMsg)
-      await ctx.send("before check residue")
-      song = Song(downloadmp3(arg, serverID), curQueue, arg)
-      await ctx.send("after check residue")
+      downloadThread, meta = downloadmp3(arg, serverID)
+      song = Song(meta, arg, queueLen)
       songQueue.append(song)
+      queueLen = len(songQueue)
       
       # meta = downloadmp3(arg)
       # expected : it will wait until the thread is finished(hopefully (pretty please (first run ok?)))
+      downloadThread.start()
+      try:
+        await ctx.send(f"this thread name: {downloadThread.name}")
+      except Exception as e:
+        await ctx.send(e)
       await ctx.send("before thread check")
-      await ctx.send(f"type of threading.enumerate() = {type(threading.enumerate())}")
-      await ctx.send(threading.enumerate())
-      await ctx.send(threading.enumerate()[0].is_alive())
-      for thread in threading.enumerate():
-        if thread.name == f"threadXXXgaming{curQueue}":
+      # 👍 nice thread gaming ftw real shit
+      for index, thread in enumerate(threading.enumerate()):
+        await ctx.send(f"{index}. {thread.name}")
+        if thread.name == f"threadXXXgaming - {meta['title']}":
           await asyncio.sleep(1)
           await ctx.send(f"hey! thread with name {thread.name} is still alive/nthread.is_alive value = {thread.is_alive()}")
 
@@ -97,31 +95,34 @@ async def play(client, ctx, *arg):
         await asyncio.sleep(1)
       await ctx.send("after thread check")
       await ctx.send("finish downloading")
-      await ctx.send(f"Playing: {song.metaInfo['title']}\nUploader: {song.metaInfo['uploader']}\nDuration: {str(datetime.timedelta(seconds=song.metaInfo['duration']))}")
-      await ctx.send(f"serverDir: {serverDir}")
       # wait for player stop
       if voice_client.is_playing():
         while voice_client.is_playing():
           await asyncio.sleep(1)
-      
+
       # create StreamPlayer
       # Note: stupid solution but at least it worked
       # if not user.voice.is_connected():
       voice_client.play(discord.FFmpegPCMAudio(f'server/{serverID}/music{curQueue}.mp3'), after=lambda e: print("done", e))
       curQueue+=1
-      
+      sendPlaying = False
       while voice_client.is_playing():
-          await asyncio.sleep(1)
+        if not sendPlaying:
+          await ctx.send(f"Playing: {song.metaInfo['title']}\nUploader: {song.metaInfo['uploader']}\nDuration: {str(datetime.timedelta(seconds=song.metaInfo['duration']))}")
+          sendPlaying = True
+        # 👍 
+        await asyncio.sleep(1)
       # disconnect after the player has finished
       voice_client.stop()
-      # await vc.disconnect()
+      
     except Exception as e:
       await ctx.send(e)
   else:
       await ctx.send('User is not in a channel.')
       await ctx.send(ctx.message.author.voice.channel)
-      
-def downloadmp3(link, serverid):
+
+
+def downloadmp3(link: str, serverid: str) -> list[object, dict]:
   global queueLen
   ydl_opts = {
       'format': 'bestaudio/best',
@@ -134,21 +135,16 @@ def downloadmp3(link, serverid):
   }
   queueLen +=1
   with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-    downloadThread = threading.Thread(target=ydl.download, args=([link]), name="threadXXXgaming{queueLen}")
     meta = ydl.extract_info(link)
-    try:
-      downloadThread.start()
-    except Exception as e:
-      print("error when running thread({downloadThread.name}) error message: {e}")
-      
-    return meta
+    downloadThread = threading.Thread(target=ydl.download, args=([link]), name=f"threadXXXgaming - {meta['title']}")
+    return downloadThread, meta
 
 # In Progress
 async def addSongToQueue(arg):
   return 
 
 async def clearQueue(ctx, serverid):
-  global queueLen, curQueue, songQueue
+  global curQueue, songQueue, queueLen
   songCleared = 0
   try:
     await ctx.send(f"active threads : {threading.active_count()}")
@@ -157,7 +153,7 @@ async def clearQueue(ctx, serverid):
   except Exception as e:
     await ctx.send(e)
   try:
-    for songNum in range(0,queueLen):
+    for songNum in range(0,len(songQueue)+1):
       #check if the song is playing or the list is empty
       if(curQueue != songNum): 
         try:
@@ -168,12 +164,13 @@ async def clearQueue(ctx, serverid):
           await ctx.send(f"queue number {songNum} failed to be erased")
     songQueue = []
     curQueue=0
+    queueLen = len(songQueue)
     await ctx.send(f"{songCleared} songs removed from queue")
-    queueLen=0
   except:
     await ctx.send("clear queue failed")
     pass
   return
+
 
 async def queue(ctx):
   try:
@@ -181,6 +178,7 @@ async def queue(ctx):
       await ctx.send(f"{song}. {song.metaInfo['title']}")
   except:
     await ctx.send("No song in queue")
+  await ctx.send(f"curQueue: {curQueue}\nqueueLen: {len(songQueue)}")
   return
 
 
@@ -188,14 +186,6 @@ async def voice_status(ctx, client):
   print(client.voice_clients)
   await ctx.send(type(client.voice_clients))
   await ctx.send(client.voice_clients)
-  for a in client.voice_clients:
-    await ctx.send(type(a))
-    try:
-      b  = vars(a)
-      await ctx.send(', '.join("%s: %s" % item for item in b.items()))
-    except:
-      pass
-
   channel = discord.utils.get(ctx.guild.voice_channels, name=ctx.message.author.voice.channel)
   voice = discord.utils.get(client.voice_clients, guild=ctx.guild)
   if not voice is None: #test if voice is 
@@ -217,22 +207,30 @@ def getInfoYoutube(linkYoutubeOrSongName):
   durasi
   """
 
-def checkQueueResidue(serverid):
-  global curQueue
+def checkQueueResidue(serverid, curQueue):
   dir = ""
   try:
-    os.chdir('server')
-    try:
-      os.mkdir(f'{serverid}')
-      dir = f"server dir ({serverid}) is made"
-    except:
-      pass
-    os.chdir(os.pardir)
+    if not os.path.exists(f'server/{serverid}'):
+      os.makedirs(f'server/{serverid}')
     os.remove(f'server/{serverid}/music{curQueue}')
   except:
     dir = "no queue residue found"
   return dir
 
+async def rmFromQueue(ctx):
+  global queueLen
+  index = int(ctx.message.content)
+  serverid = ctx.message.guild.id
+  songName = songQueue[index].metainfo['title']
+  queueLen = len(songQueue)
+  try:
+    os.remove(f'server/{serverid}/music{curQueue}')
+    songQueue.pop(index)
+  except:
+    await ctx.send("can't remove currently playing music")
+    return
+  await ctx.send(f"removed {songName}")
+  return
   
 def searchVideoByName(namaLagu):
   """ VideoSearch Object

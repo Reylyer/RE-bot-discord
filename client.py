@@ -173,7 +173,11 @@ async def queue(ctx):
   await player.queue(ctx)
 @client.command()
 async def clearq(ctx):
-  await player.clearQueue(ctx)
+  await player.clearQueue(ctx, ctx.message.guild.id)
+
+@client.command()
+async def remove(ctx):
+  await player.rmFromQueue(ctx)
   
 @client.command()
 async def pause(ctx):
