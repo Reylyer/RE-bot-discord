@@ -16,10 +16,10 @@ see bot in testing: https://discord.gg/CvvJuAQaXh
 - search ✅
 - pause
 - skip
-- song info (soon)
-- queue
+- song info ✅
+- queue ✅
 - remove queue
-- reset queue
+- reset queue ✅
 - current
 - play ✅
 - leave ✅
