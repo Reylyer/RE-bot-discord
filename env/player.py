@@ -1,4 +1,5 @@
 import asyncio, discord, datetime, youtube_dl, threading
+from posixpath import pardir
 from discord.enums import Theme
 from youtubesearchpython import VideosSearch
 import os
@@ -10,7 +11,11 @@ class Song:
     self.link = link
 
     pass
-
+try:
+  os.mkdir('server')
+except:
+  pass
+serverDir = (f"{os.getcwd()}/server")
 songQueue = []
 curQueue = 0
 queueLen = 0
@@ -33,7 +38,7 @@ async def play(client, ctx, *arg):
     # await ctx.send(arg)
     
   # only play music if user is in a voice channel
-  if voice_channel!= None:
+  if voice_channel is not None:
     try:
       # https://discordpy.readthedocs.io/en/stable/api.html#discord.VoiceClient
       # voice_clients = client.voice_clients
@@ -48,6 +53,7 @@ async def play(client, ctx, *arg):
       # WHAT THE FUCK WITH THIS MESSY CODE
       channel = ctx.message.author.voice.channel
       voice_client = discord.utils.get(client.voice_clients, guild=ctx.guild)
+      serverID = ctx.message.guild.id
       
       await ctx.send(f"voice_client = {voice_client}")
       if not voice_client is None: #test if voice is 
@@ -68,11 +74,12 @@ async def play(client, ctx, *arg):
       # download
       await ctx.send(f"downloading: <{arg}>")
       await ctx.send(f"voice_client = {voice_client}")
-      try:
-        os.remove(f"music{curQueue}.mp3")
-      except:
-        pass
-      song = Song(downloadmp3(arg), curQueue, arg)
+      dirMsg = checkQueueResidue(serverID)
+      if dirMsg:
+        await ctx.send(dirMsg)
+      await ctx.send("before check residue")
+      song = Song(downloadmp3(arg, serverID), curQueue, arg)
+      await ctx.send("after check residue")
       songQueue.append(song)
       
       # meta = downloadmp3(arg)
@@ -84,14 +91,14 @@ async def play(client, ctx, *arg):
       for thread in threading.enumerate():
         if thread.name == f"threadXXXgaming{curQueue}":
           await asyncio.sleep(1)
-          await ctx.send(f"hey! thread with name {thread.name} is still alive\nthread.is_alive value = {thread.is_alive()}")
+          await ctx.send(f"hey! thread with name {thread.name} is still alive/nthread.is_alive value = {thread.is_alive()}")
 
       #while threading.enumerate()[0].is_alive():
         await asyncio.sleep(1)
       await ctx.send("after thread check")
       await ctx.send("finish downloading")
       await ctx.send(f"Playing: {song.metaInfo['title']}\nUploader: {song.metaInfo['uploader']}\nDuration: {str(datetime.timedelta(seconds=song.metaInfo['duration']))}")
-
+      await ctx.send(f"serverDir: {serverDir}")
       # wait for player stop
       if voice_client.is_playing():
         while voice_client.is_playing():
@@ -100,7 +107,7 @@ async def play(client, ctx, *arg):
       # create StreamPlayer
       # Note: stupid solution but at least it worked
       # if not user.voice.is_connected():
-      voice_client.play(discord.FFmpegPCMAudio(f'music{curQueue}.mp3'), after=lambda e: print("done", e))
+      voice_client.play(discord.FFmpegPCMAudio(f'server/{serverID}/music{curQueue}.mp3'), after=lambda e: print("done", e))
       curQueue+=1
       
       while voice_client.is_playing():
@@ -114,7 +121,7 @@ async def play(client, ctx, *arg):
       await ctx.send('User is not in a channel.')
       await ctx.send(ctx.message.author.voice.channel)
       
-def downloadmp3(link):
+def downloadmp3(link, serverid):
   global queueLen
   ydl_opts = {
       'format': 'bestaudio/best',
@@ -123,7 +130,7 @@ def downloadmp3(link):
           'preferredcodec': 'mp3',
           'preferredquality': '192',
       }],
-      'outtmpl':f'music{queueLen}.mp3',
+      'outtmpl':f'server/{serverid}/music{queueLen}.mp3',
   }
   queueLen +=1
   with youtube_dl.YoutubeDL(ydl_opts) as ydl:
@@ -140,7 +147,7 @@ def downloadmp3(link):
 async def addSongToQueue(arg):
   return 
 
-async def clearQueue(ctx):
+async def clearQueue(ctx, serverid):
   global queueLen, curQueue, songQueue
   songCleared = 0
   try:
@@ -154,7 +161,7 @@ async def clearQueue(ctx):
       #check if the song is playing or the list is empty
       if(curQueue != songNum): 
         try:
-          os.remove(f"music{songNum}.mp3")
+          os.remove(f"server/{serverid}/music{songNum}.mp3")
           songCleared+=1
         except Exception as e:
           await ctx.send(f"error message : {e}")
@@ -209,7 +216,23 @@ def getInfoYoutube(linkYoutubeOrSongName):
   judul\n
   durasi
   """
- 
+
+def checkQueueResidue(serverid):
+  global curQueue
+  dir = ""
+  try:
+    os.chdir('server')
+    try:
+      os.mkdir(f'{serverid}')
+      dir = f"server dir ({serverid}) is made"
+    except:
+      pass
+    os.chdir(os.pardir)
+    os.remove(f'server/{serverid}/music{curQueue}')
+  except:
+    dir = "no queue residue found"
+  return dir
+
   
 def searchVideoByName(namaLagu):
   """ VideoSearch Object

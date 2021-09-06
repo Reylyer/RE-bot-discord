@@ -8,3 +8,7 @@ default_clone.ps1
 test.json
 .env
 .vscode
+server
+nhcode.json
+servers.json
+env/__pycache__
