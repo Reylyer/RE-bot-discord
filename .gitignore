@@ -9,3 +9,5 @@ test.json
 .env
 .vscode
 server
+nhcode.json
+servers.json
