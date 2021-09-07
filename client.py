@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 from types import SimpleNamespace
 #%%
-import discord
+import discord, asyncio
 import json
 import os
 from env import *
@@ -31,21 +31,24 @@ except:
     f.write(json.dumps([]))
     f.close()
     
-# @client.event
-# async def on_message(message):
-#   with open("servers.json", "r") as f:
-#     content = f.read()
-#     servers = json.loads(content, object_hook= lambda o: SimpleNamespace(**o))
-#     for server in servers:
-#       if server.id == message.guild.id:
-#         pass
-#     else:
-#       newClass = Server(message.guild.id)
-#       servers.append(newClass)
-#       f.seek(0)
-#       f.write(servers)
-#       f.truncate()
-#     f.close()
+@client.event
+async def on_message(message):
+  with open("servers.json", "r+") as f:
+    content = f.read()
+    try:
+      servers = json.loads(content, object_hook= lambda o: SimpleNamespace(**o))
+    except Exception as e:
+      await message.reply(e)
+    for server in servers:
+      if server.id is message.guild.id:
+        pass
+    else:
+      newClass = Server(message.guild.id)
+      servers.append(newClass)
+      f.seek(0)
+      f.write(servers)
+      f.truncate()
+    f.close()
     
 
 # event
@@ -86,6 +89,11 @@ async def ban(ctx, member : discord.Member, *, reason = None):
     await ctx.send(f"{member.mention} has been banned! let the hell purify your soul! \nReason = {reason}")
     print(f"banned a member, name = {member}")
 
+@client.command()
+async def mention(ctx, member : discord.Member,  amount):
+  for i in range(amount):
+    await ctx.send(f"OI! {member.mention()}")
+    await asyncio.sleep(0.5)
 
 
 
@@ -103,13 +111,11 @@ except:
     f.close()
 
 
-nhInstanceRunning = False
-
 @client.command()
-async def stopSeering(ctx):
-  global nhInstanceRunning
+async def stopSeering(ctx, sessionName):
+  await nh.stopSeering(client, ctx, sessionName)
   await ctx.send("ok")
-  nhInstanceRunning = False
+
 @client.command() #s-seerNH_here
 async def seerNH_here(ctx, *args):
   await nh.seerNH_here(client, ctx, *args)
@@ -184,7 +190,8 @@ async def pause(ctx):
   await ctx.voice_client.pause()
 @client.command()
 async def resume(ctx):
-  await ctx.voice_client.resume()
+  if ctx.voice_client.is_paused():
+    await ctx.voice_client.resume()
 @client.command()
 async def stop(ctx):
   await ctx.voice_client.stop()

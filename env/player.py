@@ -1,10 +1,26 @@
 import asyncio, discord, datetime, youtube_dl, threading, json
 from posixpath import pardir
-from discord.enums import Theme
+# from discord.enums import Theme
 from youtubesearchpython import VideosSearch
 import os
 from types import SimpleNamespace
 
+class ServerQueue:
+  def __init__(self,serverID):
+    self.serverID = serverID
+    self.queueLen = 0
+    self.curQueue = 0
+    self.songQueue = []
+  def checkQueueResidue(self):
+    dir = ""
+    try:
+      if not os.path.exists(f'server/{self.serverID}'):
+        os.makedirs(f'server/{self.serverID}')
+      os.remove(f'server/{self.serverID}/music{self.curQueue}')
+    except:
+      dir = "no queue residue found"
+    return dir
+  
 class Song:
   def __init__(self, metaInfo, link, queueOrder):
     self.metaInfo = metaInfo
@@ -15,13 +31,9 @@ try:
   os.mkdir('server')
 except:
   pass
-songQueue = []
-curQueue = 0
-queueLen = len(songQueue)
-# 
+serverQueues = []
 
 async def play(client, ctx, *arg):
-  global curQueue, queueLen
   # grab the user who sent the command
   user=ctx.message.author
   voice_channel=user.voice.channel
@@ -51,9 +63,12 @@ async def play(client, ctx, *arg):
       
       # WHAT THE FUCK WITH THIS MESSY CODE
       channel = ctx.message.author.voice.channel
-      voice_client = discord.utils.get(client.voice_clients, guild=ctx.guild)
-      serverID = ctx.message.guild.id
-      
+      voice_client = discord.utils.get(client.voice_clients, guild=ctx.guild) # bntr ada stack  overflowny kg? gw kirim ya ok
+      serverID = ctx.message.guild.id # jadi fungsi bawah ini tu return 1 klo di list serverqueues ada yg mengandung serverID tertentu, return none klo gaada
+      if next((1 for serverQueue in serverQueues if serverQueue.serverID == serverID), None) is None: 
+        serverQueues.append(ServerQueue(serverID))
+      serverIndex = findServerByID(serverID) # ni terlalu padet euy
+      await ctx.send(f"server id: {serverQueues[serverIndex].serverID}")
       await ctx.send(f"voice_client = {voice_client}")
       if not voice_client is None: #test if voice is 
         await ctx.send(f"connecting to {ctx.message.author.voice.channel} voice channel")
@@ -68,17 +83,20 @@ async def play(client, ctx, *arg):
       # download
       await ctx.send(f"downloading: <{arg}>")
       await ctx.send(f"voice_client = {voice_client}")
-      dirMsg = checkQueueResidue(serverID, curQueue)
+      dirMsg = serverQueues[serverID].checkQueueResidue()
       if dirMsg:
         await ctx.send(dirMsg)
-      downloadThread, meta = downloadmp3(arg, serverID)
-      song = Song(meta, arg, queueLen)
-      songQueue.append(song)
-      queueLen = len(songQueue)
+      downloadThread, meta = downloadmp3(arg, serverID, serverIndex)
+      song = Song(meta, arg, serverQueues[serverIndex].queueLen)
+      serverQueues[serverIndex].songQueue.append(song)
+      queueLen = len(serverQueues[serverIndex].serverQueue)
+      serverQueues[serverIndex].queueLen = queueLen
       
       # meta = downloadmp3(arg)
       # expected : it will wait until the thread is finished(hopefully (pretty please (first run ok?)))
       downloadThread.start()
+
+      # >>>>>>>>>>>>>>>>>>>>>>>>> goin to delete
       try:
         await ctx.send(f"this thread name: {downloadThread.name}")
       except Exception as e:
@@ -90,11 +108,12 @@ async def play(client, ctx, *arg):
         if thread.name == f"threadXXXgaming - {meta['title']}":
           await asyncio.sleep(1)
           await ctx.send(f"hey! thread with name {thread.name} is still alive/nthread.is_alive value = {thread.is_alive()}")
-
       #while threading.enumerate()[0].is_alive():
-        await asyncio.sleep(1)
+        # await asyncio.sleep(1)
+      # <<<<<<<<<<<<<<<<<<<<<<<<<<<<< end
       await ctx.send("after thread check")
-      await ctx.send("finish downloading")
+
+      await ctx.send("finished downloading")
       # wait for player stop
       if voice_client.is_playing():
         while voice_client.is_playing():
@@ -103,8 +122,8 @@ async def play(client, ctx, *arg):
       # create StreamPlayer
       # Note: stupid solution but at least it worked
       # if not user.voice.is_connected():
-      voice_client.play(discord.FFmpegPCMAudio(f'server/{serverID}/music{curQueue}.mp3'), after=lambda e: print("done", e))
-      curQueue+=1
+      voice_client.play(discord.FFmpegPCMAudio(f'server/{serverID}/music{serverQueues[serverIndex].curQueue}.mp3'), after=lambda e: print("done", e))
+      serverQueues[serverIndex].curQueue+=1
       sendPlaying = False
       while voice_client.is_playing():
         if not sendPlaying:
@@ -122,8 +141,7 @@ async def play(client, ctx, *arg):
       await ctx.send(ctx.message.author.voice.channel)
 
 
-def downloadmp3(link: str, serverid: str) -> list[object, dict]:
-  global queueLen
+def downloadmp3(link: str, serverid: str, serverIndex: int) -> list[object, dict]:
   ydl_opts = {
       'format': 'bestaudio/best',
       'postprocessors': [{
@@ -131,10 +149,10 @@ def downloadmp3(link: str, serverid: str) -> list[object, dict]:
           'preferredcodec': 'mp3',
           'preferredquality': '192',
       }],
-      'outtmpl':f'server/{serverid}/music{queueLen}.mp3',
+      'outtmpl':f'server/{serverid}/music{serverQueues[serverIndex].queueLen}.mp3',
   }
-  queueLen +=1
-  with youtube_dl.YoutubeDL(ydl_opts) as ydl: # masi ada raise error ato belom reload?
+  serverQueues[serverIndex].queueLen +=1
+  with youtube_dl.YoutubeDL(ydl_opts) as ydl:
     meta = ydl.extract_info(link) # 
     downloadThread = threading.Thread(target=ydl.download, args=([link]), name=f"threadXXXgaming - {meta['title']}")
     return downloadThread, meta
@@ -143,42 +161,43 @@ def downloadmp3(link: str, serverid: str) -> list[object, dict]:
 async def addSongToQueue(arg):
   return 
 
-async def clearQueue(ctx, serverid):
-  global curQueue, songQueue, queueLen
+async def clearQueue(ctx):
+  serverIndex = findServerByID(ctx.message.guild.id)
   songCleared = 0
+  msg = ""
+  # try:
+  #   msg += f"active threads : {threading.active_count()}\n"
+  #   for thread in threading.enumerate():
+  #     msg += f"{thread.name}, alive: {thread.is_alive()}\n"
+  # except Exception as e:
+  #   msg += e
   try:
-    await ctx.send(f"active threads : {threading.active_count()}")
-    for thread in threading.enumerate():
-      await ctx.send(f"{thread.name}, alive: {thread.is_alive()}")
-  except Exception as e:
-    await ctx.send(e)
-  try:
-    for songNum in range(0,len(songQueue)+1):
+    for songNum in range(0,len(serverQueues[serverIndex].songQueue)+1):
       #check if the song is playing or the list is empty
-      if(curQueue != songNum): 
+      if(serverQueues[serverIndex].curQueue != songNum): 
         try:
-          os.remove(f"server/{serverid}/music{songNum}.mp3")
+          os.remove(f"server/{serverQueues[serverIndex].serverID}/music{songNum}.mp3\n")
           songCleared+=1
         except Exception as e:
-          await ctx.send(f"error message : {e}")
-          await ctx.send(f"queue number {songNum} failed to be erased")
-    songQueue = []
-    curQueue=0
-    queueLen = len(songQueue)
-    await ctx.send(f"{songCleared} songs removed from queue")
+          return ctx.send(f"error message : {e}\nqueue number {songNum} failed to be erased,\n")
+    serverQueues[serverIndex].songQueue = []
+    serverQueues[serverIndex].curQueue=0
+    serverQueues[serverIndex].queueLen = len(serverQueues[serverIndex].songQueue)
+    msg+=f"{songCleared} songs removed from queue\n"
   except:
-    await ctx.send("clear queue failed")
+    msg+="clear queue failed\n"
     pass
-  return
+  return msg
 
 
 async def queue(ctx):
+  serverIndex = findServerByID(ctx.message.guild.id)
   try:
-    for song in songQueue:
+    for song in serverQueues[serverIndex].songQueue:
       await ctx.send(f"{song}. {song.metaInfo['title']}")
   except:
     await ctx.send("No song in queue")
-  await ctx.send(f"curQueue: {curQueue}\nqueueLen: {len(songQueue)}")
+  await ctx.send(f"curQueue: {serverQueues[serverIndex].curQueue}\nqueueLen: {len(serverQueues[serverIndex].songQueue)}")
   return
 
 
@@ -198,7 +217,7 @@ async def voice_status(ctx, client):
     if not voice.is_connected():
       await channel.connect()
   else:
-      await channel.connect()
+    await channel.connect()
       
 def getInfoYoutube(linkYoutubeOrSongName):
   """mengembalikan informasi video\n
@@ -207,25 +226,17 @@ def getInfoYoutube(linkYoutubeOrSongName):
   durasi
   """
 
-def checkQueueResidue(serverid, curQueue):
-  dir = ""
-  try:
-    if not os.path.exists(f'server/{serverid}'):
-      os.makedirs(f'server/{serverid}')
-    os.remove(f'server/{serverid}/music{curQueue}')
-  except:
-    dir = "no queue residue found"
-  return dir
+
 
 async def rmFromQueue(ctx):
-  global queueLen
   index = int(ctx.message.content)
   serverid = ctx.message.guild.id
-  songName = songQueue[index].metainfo['title']
-  queueLen = len(songQueue)
+  serverIndex = findServerByID(serverid)
+  songName = serverQueues[serverIndex].songQueue[index].metainfo['title']
+  serverQueues[serverIndex].queueLen = len(serverQueues[serverIndex].songQueue)
   try:
-    os.remove(f'server/{serverid}/music{curQueue}')
-    songQueue.pop(index)
+    os.remove(f'server/{serverid}/music{serverQueues[serverIndex].curQueue}')
+    serverQueues[serverIndex].songQueue.pop(index)
   except:
     await ctx.send("can't remove currently playing music")
     return
@@ -240,3 +251,7 @@ def searchVideoByName(namaLagu):
 
 def getThreadCount():
   return threading.active_count(), threading.current_thread()
+
+def findServerByID(serverid):
+  for i in enumerate(serverQueues):
+    return i if serverQueues[i].serverID == serverid else None
