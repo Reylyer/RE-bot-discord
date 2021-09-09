@@ -23,5 +23,6 @@ see bot in testing: https://discord.gg/CvvJuAQaXh
 - current
 - play ✅
 - leave ✅
+- Multi server support ✅
 
 ## Known issue
