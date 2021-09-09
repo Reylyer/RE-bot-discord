@@ -1,4 +1,4 @@
-import discord
+import discord, os
 from types import SimpleNamespace
 import json
 from pyppeteer import launch
@@ -59,23 +59,23 @@ async def stopSeering(client, ctx, sessionName):
 async def seerNH_here(client, ctx, *args):
   """ mengaktifkan nhSession 
   """
-    # get channel where seerNH_here invoked
-    channel = discord.utils.get(client.get_all_channels(), name=str(ctx.channel))
-    with open(f"server/{ctx.guild.id}/nhSessions.json", "r+") as f:
+  # get channel where seerNH_here invoked
+  channel = discord.utils.get(client.get_all_channels(), name=str(ctx.channel))
+  with open(f"server/{ctx.guild.id}/nhSessions.json", "r+") as f:
     content = f.read()
-      nhSessions = json.loads(content, object_hook= lambda o: SimpleNamespace(**o))
-      for nhSession in nhSessions:
-        await ctx.send(nhSession.__dict__)
-        if nhSession.sessionName is sessionName:
-          # ketemu
-          await ctx.send(f"nhSession dengan nama {sessionName}, sudah dijalankan")
-      else:
-        await ctx.send(f"Tidak ada nhSession dengan nama {sessionName}")
-      f.seek(0)
-      f.write(nhSessions)
-      f.truncate()
-      f.close()
-    await NHPLoop(channel, args)
+    nhSessions = json.loads(content, object_hook= lambda o: SimpleNamespace(**o))
+    for nhSession in nhSessions:
+      await ctx.send(nhSession.__dict__)
+      if nhSession.sessionName is sessionName:
+        # ketemu
+        await ctx.send(f"nhSession dengan nama {sessionName}, sudah dijalankan")
+    else:
+      await ctx.send(f"Tidak ada nhSession dengan nama {sessionName}")
+    f.seek(0)
+    f.write(nhSessions)
+    f.truncate()
+    f.close()
+  await NHPLoop(channel, args)
 
 async def NHPLoop(channel, args): # get 5 codes of popular art on main page
   print(args)
@@ -231,7 +231,8 @@ async def NHPLoop(channel, args): # get 5 codes of popular art on main page
             return
           subjectNhSession = nhSession
           break
-      else:
+    except:
+      pass
     # subjectNhSession -> NhSession Object
 
     
