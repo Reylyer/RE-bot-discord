@@ -1,7 +1,7 @@
 from __future__ import unicode_literals
 from types import SimpleNamespace
 #%%
-import discord
+import discord, asyncio
 import json
 import os
 from env import *
@@ -33,21 +33,22 @@ except:
     
 # @client.event
 # async def on_message(message):
-#   with open("servers.json", "r") as f:
+#   with open("servers.json", "r+") as f:
 #     content = f.read()
-#     servers = json.loads(content, object_hook= lambda o: SimpleNamespace(**o))
+#     try:
+#       servers = json.loads(content, object_hook= lambda o: SimpleNamespace(**o))
+#     except Exception as e:
+#       await message.reply(e)
 #     for server in servers:
-#       if server.id == message.guild.id:
+#       if server.id is message.guild.id:
 #         pass
 #     else:
 #       newClass = Server(message.guild.id)
 #       servers.append(newClass)
 #       f.seek(0)
-#       f.write(servers)
+#       f.write(str(servers))
 #       f.truncate()
 #     f.close()
-    
-
 # event
 @client.event # bot online (saat .py ini dijalankan)
 async def on_ready():
@@ -86,6 +87,11 @@ async def ban(ctx, member : discord.Member, *, reason = None):
     await ctx.send(f"{member.mention} has been banned! let the hell purify your soul! \nReason = {reason}")
     print(f"banned a member, name = {member}")
 
+@client.command()
+async def mention(ctx, member : discord.Member,  amount):
+  for i in range(amount):
+    await ctx.send(f"OI! {member.mention()}")
+    await asyncio.sleep(0.5)
 
 
 
@@ -102,13 +108,12 @@ except:
     f.write(json.dumps([]))
     f.close()
 
-nhInstanceRunning = False
 
 @client.command()
-async def stopSeering(ctx):
-  global nhInstanceRunning
+async def stopSeering(ctx, sessionName):
+  await nh.stopSeering(client, ctx, sessionName)
   await ctx.send("ok")
-  nhInstanceRunning = False
+
 @client.command() #s-seerNH_here
 async def seerNH_here(ctx, *args):
   await nh.seerNH_here(client, ctx, *args)
@@ -149,6 +154,8 @@ async def sendMonitorCovid(ctx):
 @client.command()
 async def play(ctx, *arg):
   await player.play(client, ctx, *arg)
+  if ctx.message.content.contains('allah'):
+    await ctx.send('mashallah brother, keep up your iman')
 
 @client.command()
 async def join(ctx):
@@ -162,6 +169,7 @@ async def leave(ctx):
   for voi in voice_clients:
     if voi.channel == voice_channel:
       voice_client = voi
+      await ctx.voice_client.stop()
       await voice_client.disconnect()
       break
     await player.clearQueue()
@@ -172,8 +180,7 @@ async def queue(ctx):
   await player.queue(ctx)
 @client.command()
 async def clearq(ctx):
-  await player.clearQueue(ctx, ctx.message.guild.id)
-
+  await player.clearQueue(ctx, ctx.message.guild.id) 
 @client.command()
 async def remove(ctx):
   await player.rmFromQueue(ctx)
@@ -183,7 +190,8 @@ async def pause(ctx):
   await ctx.voice_client.pause()
 @client.command()
 async def resume(ctx):
-  await ctx.voice_client.resume()
+  if ctx.voice_client.is_paused():
+    await ctx.voice_client.resume()
 @client.command()
 async def stop(ctx):
   await ctx.voice_client.stop()
@@ -227,4 +235,3 @@ client.run(TOKEN)
 
 # on repl.it if not working :
 # install-pkg gconf-service libasound2 libatk1.0-0 libatk-bridge2.0-0 libc6 libcairo2 libcups2 libdbus-1-3 libexpat1 libfontconfig1 libgcc1 libgconf-2-4 libgdk-pixbuf2.0-0 libglib2.0-0 libgtk-3-0 libnspr4 libpango-1.0-0 libpangocairo-1.0-0 libstdc++6 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 libxss1 libxtst6 ca-certificates fonts-liberation libappindicator1 libnss3 lsb-release xdg-utils wget
-
