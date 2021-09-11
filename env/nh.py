@@ -330,7 +330,7 @@ async def nhScraper(subjectLink: str, additionalSelector: str, amount: int) -> l
   return [codes, captions]
 
 
-async def getTagsAndThumbnailAndPagesFromCode(code = "177013": str) -> list[list[str], str, str]:
+async def getTagsAndThumbnailAndPagesFromCode(code: str = "177013") -> list[list[str], str, str]:
   """return tags, thumbail url and pages count given code """
   browser = await launch(ignoreHTTPSErrors = True, headless = True, args=["--no-sandbox"])
   page = await browser.newPage()

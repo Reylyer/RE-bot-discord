@@ -52,30 +52,22 @@ async def play(client, ctx, *arg):
   if voice_channel is not None:
     try:
       # https://discordpy.readthedocs.io/en/stable/api.html#discord.VoiceClient
-    
-    
+      # voice_clients = client.voice_clients
+      # for voi in voice_clients:
+      #   if voi.channel == voice_channel:
+      #     voice_client = voi
+      #     break
+      # else:
+      #   voice_client = await voice_channel.connect()
+      
+      
       # WHAT THE FUCK WITH THIS MESSY CODE
       channel = ctx.message.author.voice.channel
-      voice_client = discord.utils.get(client.voice_clients, guild=ctx.guild) 
-      serverID = ctx.message.guild.id 
-      
-      # jadi fungsi bawah ini tu return 1 klo di list serverqueues ada yg mengandung serverID tertentu, return none klo gaada
+      voice_client = discord.utils.get(client.voice_clients, guild=ctx.guild) # bntr ada stack  overflowny kg? gw kirim ya ok
+      serverID = ctx.message.guild.id # jadi fungsi bawah ini tu return 1 klo di list serverqueues ada yg mengandung serverID tertentu, return none klo gaada
       if next((1 for serverQueue in serverQueues if serverQueue.serverID == serverID), None) is None: 
         serverQueues.append(ServerQueue(serverID))
       serverIndex = findServerByID(serverID) # ni terlalu padet euy
-      
-      # PLIS REFERENCE BUKAN COPY WKWKWKWKWKWKWWKWKWK masalahnya kalo list reference
-      # misal
-      #%% pencet ctrl + enter di cursor gw
-      
-      #%% ape tu?
-
-
-      #lah ini ngapa ke run ndiri?
-      serverQueue = findServerByIDTryFix(serverID) # ni terlalu padet euy 
-
-      
-
       await ctx.send(f"server id: {serverQueues[serverIndex].serverID}")
       await ctx.send(f"voice_client = {voice_client}")
       if not voice_client is None: #test if voice is 
@@ -94,36 +86,34 @@ async def play(client, ctx, *arg):
       dirMsg = serverQueues[serverID].checkQueueResidue()
       if dirMsg:
         await ctx.send(dirMsg)
-#aowkoawkaokaokwo pake server index ku
-      # oh si index cuman buat nyari servernya? ampe buat method find server by id wkkwk 
-      #hmmm
-      # create download thread and start it
-      downloadThread = DownloadThread(f"threadXXXgaming-{curQueue}", arg, serverID, serverIndex)
-      downloadThread.start()
-
-      # create wait var for time memory
-      waiting = 0
-
-      # wait until downloadThread has attribute / property 'meta' i.e. downloadThread.meta
-      while not hasattr(downloadThread, "meta"):# https://stackoverflow.com/questions/843277/how-do-i-check-if-a-variable-exists
-        await ctx.send(f"waiting thread {downloadThread.name} to finish, {waiting} seconds passed")
-        await asyncio.sleep(5)
-        waiting += 5 
-        if waiting > 40: # dengerin dosen dulu ,setuju
-          # terminate thread
-          await ctx.send("reaching time limit, terminating...")
-          return  #bisa to? kek di c kan jadinya blm dicoba sih, gatau error ato ga wkkwkwk
-      
-      # get meta from downloadThread
-      meta = downloadThread.meta
-      # creating song object
-      
+      downloadThread, meta = downloadmp3(arg, serverID, serverIndex)
       song = Song(meta, arg, serverQueues[serverIndex].queueLen)
       serverQueues[serverIndex].songQueue.append(song)
       queueLen = len(serverQueues[serverIndex].serverQueue)
       serverQueues[serverIndex].queueLen = queueLen
+      
+      # meta = downloadmp3(arg)
+      # expected : it will wait until the thread is finished(hopefully (pretty please (first run ok?)))
+      downloadThread.start()
 
-      await ctx.send("finished downloading 👍")
+      # >>>>>>>>>>>>>>>>>>>>>>>>> goin to delete
+      try:
+        await ctx.send(f"this thread name: {downloadThread.name}")
+      except Exception as e:
+        await ctx.send(e)
+      await ctx.send("before thread check")
+      # 👍 nice thread gaming ftw real shit
+      for index, thread in enumerate(threading.enumerate()):
+        await ctx.send(f"{index}. {thread.name}")
+        if thread.name == f"threadXXXgaming - {meta['title']}":
+          await asyncio.sleep(1)
+          await ctx.send(f"hey! thread with name {thread.name} is still alive/nthread.is_alive value = {thread.is_alive()}")
+      #while threading.enumerate()[0].is_alive():
+        # await asyncio.sleep(1)
+      # <<<<<<<<<<<<<<<<<<<<<<<<<<<<< end
+      await ctx.send("after thread check")
+
+      await ctx.send("finished downloading")
       # wait for player stop
       if voice_client.is_playing():
         while voice_client.is_playing():
@@ -150,37 +140,7 @@ async def play(client, ctx, *arg):
       await ctx.send('User is not in a channel.')
       await ctx.send(ctx.message.author.voice.channel)
 
-class DownloadThread(threading.Thread):
-  def __init__(self, name, link, serverid, serverIndex):
-    threading.Thread.__init__(self)
-    self.name = name
-    self.link = link
-    self.serverid = serverid
-    self.serverIndex = serverIndex
-  
-  def run(self) -> None:
-    print(f"starting thread {self.name}")
-    self.downloadmp3()
-    print(f"exiting thread {self.name}")
 
-  def downloadmp3(self) -> dict:
-    subjectServerQueue = findServerByID(self.serverid)
-    ydl_opts = {
-        'format': 'bestaudio/best',
-        'postprocessors': [{
-            'key': 'FFmpegExtractAudio',
-            'preferredcodec': 'mp3',
-            'preferredquality': '192',
-        }],
-        'outtmpl':f'server/{self.serverid}/music{subjectServerQueue.queueLen}.mp3',
-        'external-downloader': 'aria2c',
-        #'external-downloader-args': '-x 2',
-    }
-    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-      meta = ydl.extract_info(self.link)
-      ydl.download([self.link])
-      #downloadThread = threading.Thread(target=ydl.download, args=([link]), name=f"threadXXXgaming - {meta['title']}")
-      self.meta =  meta
 def downloadmp3(link: str, serverid: str, serverIndex: int) -> list[object, dict]:
   ydl_opts = {
       'format': 'bestaudio/best',
@@ -295,7 +255,3 @@ def getThreadCount():
 def findServerByID(serverid):
   for i in enumerate(serverQueues):
     return i if serverQueues[i].serverID == serverid else None
-def findServerByIDTryFix(serverid: str) -> ServerQueue:
-  for serverQueue in serverQueues:
-    if serverQueue.serverID is serverid:
-      return serverQueue
