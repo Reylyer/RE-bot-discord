@@ -1,6 +1,5 @@
 from __future__ import annotations
 import asyncio, discord, youtube_dl, threading, re, unicodedata, youtubesearchpython, os
-from discord import player
 from posixpath import pardir
 
 playerList = []
@@ -10,7 +9,7 @@ try:
 except:
   pass
 
-async def bind(client, ctx):
+async def bind(client, ctx, arg):
     if ctx.message.author.voice is not None:
         newPlayer = Player(client, ctx.author.voice.channel, ctx.channel, 80)
         newPlayer.start()
