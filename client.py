@@ -158,9 +158,10 @@ async def sendMonitorCovid(ctx):
   
 
 # all about voice channel
+# call to a voice client and
 @client.command()
-async def bind(ctx):
-  pass
+async def bind(ctx, arg):
+  await player.bind(client, ctx, arg)
 
 @client.command()
 async def play(ctx, *arg):
@@ -168,7 +169,7 @@ async def play(ctx, *arg):
 
 @client.command()
 async def latency(ctx):
-
+  pass
 
 
 

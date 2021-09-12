@@ -1,5 +1,6 @@
 from __future__ import annotations
-import asyncio, discord, datetime, youtube_dl, threading, re, unicodedata, youtubesearchpython, os
+import asyncio, discord, youtube_dl, threading, re, unicodedata, youtubesearchpython, os
+from discord import player
 from posixpath import pardir
 
 playerList = []
@@ -8,6 +9,24 @@ try:
   os.mkdir('servers')
 except:
   pass
+
+async def bind(client, ctx):
+    if ctx.message.author.voice is not None:
+        newPlayer = Player(client, ctx.author.voice.channel, ctx.channel, 80)
+        newPlayer.start()
+        playerList.append(newPlayer)
+
+async def play(client, ctx, arg):
+    for player in playerList:
+        if player.server_id == ctx.message.guild.id:
+            pass
+    else:
+        if ctx.message.author.voice is not None:
+            newPlayer = Player(client, ctx.author)
+            playerList.append(newPlayer)
+            await newPlayer.launch()
+        else:
+            await ctx.send("Ku harus kemana sayang...")
 
 async def latency():
 
@@ -26,15 +45,16 @@ songQueue berisi Song Object
 
 """
 
-class Player(discord.VoiceClient):
+class Player(discord.VoiceClient, threading.Thread):
     # self.serverIndex now deprecated we use the search object now
     def __init__(self, client: discord.Client, channel: discord.VoiceChannel, logChannel: discord.TextChannel, timerLimit: int = 60):
-        discord.VoiceClient.__init__(client = client, channel = channel)
+        discord.VoiceClient.__init__(self, client = client, channel = channel)
         self.pointerPlayer = 0
         self.songQueue = [] # list of Song Objects
         self.logChannel = logChannel
         self.timerLimit = timerLimit
         self.server_id = logChannel.guild.id
+        threading.Thread.__init__(self, name=str(self.server_id))
         try:
             os.mkdir(f"./servers/{self.server_id}")
             os.mkdir(f"./servers/{self.server_id}/musics")
@@ -48,6 +68,23 @@ class Player(discord.VoiceClient):
             self.play()
             await asyncio.sleep(1)
 
+    def run(self):
+        while self.is_connected():
+            loop = asyncio.get_event_loop()
+            asyncio.set_event_loop(loop)
+            while self.pointerPlayer < len(self.songQueue):
+                loop.run_until_complete(self.playSong(self.songQueue[self.pointerPlayer]))
+                while self.is_playing:
+                    loop.run_until_complete(self.sleep())
+                self.pointerPlayer += 1
+
+    async def playSong(self, fileName):
+        self.play(discord.FFmpegAudio(f'servers/{self.server_id}/musics/{fileName}.mp3'))
+    
+    async def sleep():
+        await asyncio.sleep(1)
+
+        
     def startQueue(self):
         while self.pointerPlayer != len(self.songQueue):
             self.play
