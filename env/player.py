@@ -60,9 +60,13 @@ async def play(client, ctx, *arg):
       serverID = ctx.message.guild.id 
       
       # jadi fungsi bawah ini tu return 1 klo di list serverqueues ada yg mengandung serverID tertentu, return none klo gaada
-      if next((1 for serverQueue in serverQueues if serverQueue.serverID == serverID), None) is None: 
-        serverQueues.append(ServerQueue(serverID))
-      serverIndex = findServerByID(serverID) # ni terlalu padet euy
+      try:
+        if next((1 for serverQueue in serverQueues if serverQueue.serverID == serverID), None) is None: 
+          serverQueues.append(ServerQueue(serverID))
+        serverIndex = findServerByID(serverID) # ni terlalu padet euy
+      except Exception as e:
+        await ctx.send(f"FINDSERVERBYIDMU MASALAH MAS\n{e}")
+      
       
       # PLIS REFERENCE BUKAN COPY WKWKWKWKWKWKWWKWKWK masalahnya kalo list reference
       # misal
@@ -72,7 +76,7 @@ async def play(client, ctx, *arg):
 
 
       #lah ini ngapa ke run ndiri?
-      serverQueue = findServerByIDTryFix(serverID) # ni terlalu padet euy 
+      serverQueue = findServerByID(serverID) # ni terlalu padet euy 
 
       
 
@@ -91,14 +95,26 @@ async def play(client, ctx, *arg):
       # download
       await ctx.send(f"downloading: <{arg}>")
       await ctx.send(f"voice_client = {voice_client}")
-      dirMsg = serverQueues[serverID].checkQueueResidue()
-      if dirMsg:
-        await ctx.send(dirMsg)
-#aowkoawkaokaokwo pake server index ku
+      await ctx.send(f"type of serverIndex = {type(serverIndex)}")
+      try:
+        dirMsg = serverQueues[serverID].checkQueueResidue()
+        if dirMsg:
+          await ctx.send(dirMsg)
+      except Exception as e:
+        await ctx.send(f"ASU\n{e}")
+        for i in range(len(serverQueues)):
+          await ctx.send(f"{i}. {serverQueues[i]}")
+          await ctx.send(serverIndex)
+          await ctx.send(serverQueues)
+      
+      
+      #aowkoawkaokaokwo pake server index ku
       # oh si index cuman buat nyari servernya? ampe buat method find server by id wkkwk 
       #hmmm
       # create download thread and start it
-      downloadThread = DownloadThread(f"threadXXXgaming-{curQueue}", arg, serverID, serverIndex)
+
+      # ini kayaknya cok emang serverQueues  DICt I think not, just a pure class trykk
+      downloadThread = DownloadThread(f"threadXXXgaming-{serverQueues[serverIndex].curQueue}", arg, serverID, serverIndex)
       downloadThread.start()
 
       # create wait var for time memory
@@ -120,7 +136,7 @@ async def play(client, ctx, *arg):
       
       song = Song(meta, arg, serverQueues[serverIndex].queueLen)
       serverQueues[serverIndex].songQueue.append(song)
-      queueLen = len(serverQueues[serverIndex].serverQueue)
+      queueLen = len(serverQueues[serverIndex].songQueue) # songQUeueu harusnya co nes eue EUE
       serverQueues[serverIndex].queueLen = queueLen
 
       await ctx.send("finished downloading 👍")
@@ -164,14 +180,14 @@ class DownloadThread(threading.Thread):
     print(f"exiting thread {self.name}")
 
   def downloadmp3(self) -> dict:
-    subjectServerQueue = findServerByID(self.serverid)
-    ydl_opts = {
+    subjectServerQueue = findServerByIDTryFix(self.serverid) # ini butuh ServerQueue Object oalah
+    ydl_opts = {  
         'format': 'bestaudio/best',
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
             'preferredcodec': 'mp3',
             'preferredquality': '192',
-        }],
+        }], #kek gini? # iyep padahal cuman buat ambil properti queuelen su ngambilnya object cuman sekali doang lagi akwokawokawokawoa slow but works noo comment try?yyyyyy
         'outtmpl':f'server/{self.serverid}/music{subjectServerQueue.queueLen}.mp3',
         'external-downloader': 'aria2c',
         #'external-downloader-args': '-x 2',
@@ -201,8 +217,8 @@ def downloadmp3(link: str, serverid: str, serverIndex: int) -> list[object, dict
 async def addSongToQueue(arg):
   return 
 
-async def clearQueue(ctx):
-  serverIndex = findServerByID(ctx.message.guild.id)
+async def clearQueue(ctx, serverID):
+  serverIndex = findServerByID(serverID)
   songCleared = 0
   msg = ""
   # try:
@@ -212,14 +228,14 @@ async def clearQueue(ctx):
   # except Exception as e:
   #   msg += e
   try:
-    for songNum in range(0,len(serverQueues[serverIndex].songQueue)+1):
+    for songNum in range(0,len(serverQueues[serverIndex].songQueue)):
       #check if the song is playing or the list is empty
       if(serverQueues[serverIndex].curQueue != songNum): 
         try:
-          os.remove(f"server/{serverQueues[serverIndex].serverID}/music{songNum}.mp3\n")
+          os.remove(f"server/{serverQueues[serverIndex].serverID}/music{songNum}.mp3")
           songCleared+=1
         except Exception as e:
-          return ctx.send(f"error message : {e}\nqueue number {songNum} failed to be erased,\n")
+          await ctx.send(f"error message : {e}\nqueue number {songNum} failed to be erased,\n")
     serverQueues[serverIndex].songQueue = []
     serverQueues[serverIndex].curQueue=0
     serverQueues[serverIndex].queueLen = len(serverQueues[serverIndex].songQueue)
@@ -227,7 +243,7 @@ async def clearQueue(ctx):
   except:
     msg+="clear queue failed\n"
     pass
-  return msg
+  await ctx.send(msg)
 
 
 async def queue(ctx):
@@ -293,8 +309,12 @@ def getThreadCount():
   return threading.active_count(), threading.current_thread()
 
 def findServerByID(serverid):
-  for i in enumerate(serverQueues):
-    return i if serverQueues[i].serverID == serverid else None
+  serverIndex = None
+  for i in range(0, len(serverQueues)):
+    if serverQueues[i].serverID == serverid:
+      serverIndex = i
+  return serverIndex
+
 def findServerByIDTryFix(serverid: str) -> ServerQueue:
   for serverQueue in serverQueues:
     if serverQueue.serverID is serverid:

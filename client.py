@@ -10,7 +10,7 @@ from env import *
 from discord.ext import commands
 from dotenv import load_dotenv
 # command prefix s-
-client = commands.Bot(command_prefix="z-")
+client = commands.Bot(command_prefix="s-")
 
 # environment variable
 load_dotenv('.env')
@@ -31,26 +31,24 @@ except:
     f.write(json.dumps([]))
     f.close()
     
-@client.event
-async def on_message(message):
-  with open("servers.json", "r+") as f:
-    content = f.read()
-    try:
-      servers = json.loads(content, object_hook= lambda o: SimpleNamespace(**o))
-    except Exception as e:
-      await message.reply(e)
-    for server in servers:
-      if server.id is message.guild.id:
-        pass
-    else:
-      newClass = Server(message.guild.id)
-      servers.append(newClass)
-      f.seek(0)
-      f.write(servers)
-      f.truncate()
-    f.close()
-    
-
+# @client.event
+# async def on_message(message):
+#   with open("servers.json", "r+") as f:
+#     content = f.read()
+#     try:
+#       servers = json.loads(content, object_hook= lambda o: SimpleNamespace(**o))
+#     except Exception as e:
+#       await message.reply(e)
+#     for server in servers:
+#       if server.id is message.guild.id:
+#         pass
+#     else:
+#       newClass = Server(message.guild.id)
+#       servers.append(newClass)
+#       f.seek(0)
+#       f.write(str(servers))
+#       f.truncate()
+#     f.close()
 # event
 @client.event # bot online (saat .py ini dijalankan)
 async def on_ready():
@@ -156,6 +154,8 @@ async def sendMonitorCovid(ctx):
 @client.command()
 async def play(ctx, *arg):
   await player.play(client, ctx, *arg)
+  if ctx.message.content.contains('allah'):
+    await ctx.send('mashallah brother, keep up your iman')
 
 @client.command()
 async def join(ctx):
@@ -169,6 +169,7 @@ async def leave(ctx):
   for voi in voice_clients:
     if voi.channel == voice_channel:
       voice_client = voi
+      await ctx.voice_client.stop()
       await voice_client.disconnect()
       break
     await player.clearQueue()
@@ -179,8 +180,7 @@ async def queue(ctx):
   await player.queue(ctx)
 @client.command()
 async def clearq(ctx):
-  await player.clearQueue(ctx, ctx.message.guild.id)
-
+  await player.clearQueue(ctx, ctx.message.guild.id) 
 @client.command()
 async def remove(ctx):
   await player.rmFromQueue(ctx)
@@ -235,4 +235,3 @@ client.run(TOKEN)
 
 # on repl.it if not working :
 # install-pkg gconf-service libasound2 libatk1.0-0 libatk-bridge2.0-0 libc6 libcairo2 libcups2 libdbus-1-3 libexpat1 libfontconfig1 libgcc1 libgconf-2-4 libgdk-pixbuf2.0-0 libglib2.0-0 libgtk-3-0 libnspr4 libpango-1.0-0 libpangocairo-1.0-0 libstdc++6 libx11-6 libx11-xcb1 libxcb1 libxcomposite1 libxcursor1 libxdamage1 libxext6 libxfixes3 libxi6 libxrandr2 libxrender1 libxss1 libxtst6 ca-certificates fonts-liberation libappindicator1 libnss3 lsb-release xdg-utils wget
-
