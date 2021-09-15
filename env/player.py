@@ -217,8 +217,8 @@ def downloadmp3(link: str, serverid: str, serverIndex: int) -> list[object, dict
 async def addSongToQueue(arg):
   return 
 
-async def clearQueue(ctx):
-  serverIndex = findServerByID(ctx.message.guild.id)
+async def clearQueue(ctx, serverID):
+  serverIndex = findServerByID(serverID)
   songCleared = 0
   msg = ""
   # try:
