@@ -1,4 +1,4 @@
-from __future__ import unicode_literals
+from __future__ import unicode_literals, annotations
 from types import SimpleNamespace
 #%%
 import discord, asyncio
@@ -31,24 +31,24 @@ except:
     f.write(json.dumps([]))
     f.close()
     
-@client.event
-async def on_message(message):
-  with open("servers.json", "r+") as f:
-    content = f.read()
-    try:
-      servers = json.loads(content, object_hook= lambda o: SimpleNamespace(**o))
-    except Exception as e:
-      await message.reply(e)
-    for server in servers:
-      if server.id is message.guild.id:
-        pass
-    else:
-      newClass = Server(message.guild.id)
-      servers.append(newClass)
-      f.seek(0)
-      f.write(servers)
-      f.truncate()
-    f.close()
+# @client.event
+# async def on_message(message):
+#   with open("servers.json", "r+") as f:
+#     content = f.read()
+#     try:
+#       servers = json.loads(content, object_hook= lambda o: SimpleNamespace(**o))
+#     except Exception as e:
+#       await message.reply(e)
+#     for server in servers:
+#       if server.id is message.guild.id:
+#         pass
+#     else:
+#       newClass = Server(message.guild.id)
+#       servers.append(newClass)
+#       f.seek(0)
+#       f.write(servers)
+#       f.truncate()
+#     f.close()
     
 
 # event
@@ -169,17 +169,20 @@ async def leave(ctx):
   for voi in voice_clients:
     if voi.channel == voice_channel:
       voice_client = voi
-      await voice_client.disconnect()
       break
-    await player.clearQueue()
   else:
-    pass
+    await ctx.send("kamu atau aku engga di voice channel \:(")
+    return
+  voice_client.stop()
+  await voice_client.disconnect()
+  await player.clearQueue(ctx)
+
 @client.command()
 async def queue(ctx):
   await player.queue(ctx)
 @client.command()
 async def clearq(ctx):
-  await player.clearQueue(ctx, ctx.message.guild.id)
+  await player.clearQueue(ctx)
 
 @client.command()
 async def remove(ctx):
