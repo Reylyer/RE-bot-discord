@@ -9,13 +9,16 @@ from env import *
 #import time
 from discord.ext import commands
 from dotenv import load_dotenv
-# command prefix s-
-client = commands.Bot(command_prefix="z-")
+
+
 
 # environment variable
 load_dotenv('.env')
 TOKEN = os.getenv('TOKEN')
-
+PREFIX = os.getenv('PREFIX')
+print(PREFIX)
+# command prefix from .env
+client = commands.Bot(command_prefix=str(PREFIX))
 class Server():
   def __init__(self, id):
     self.id = id
@@ -89,14 +92,14 @@ async def kick(ctx, member : discord.Member, *, reason = None):
     print(f"kicked a member, name = {member}")
 
 @client.command() #s-ban
-async def ban(ctx, member : discord.Member, *, reason = None):
+async def ban(ctx, member, *, reason = None):
     await member.ban(reason = reason)
     await ctx.send(f"{member.mention} has been banned! let the hell purify your soul! \nReason = {reason}")
     print(f"banned a member, name = {member}")
 
 @client.command()
 async def mention(ctx, member : discord.Member,  amount):
-  for _ in range(amount):
+  for _ in range(int(amount)):
     await ctx.send(f"OI! {member.mention()}")
     await asyncio.sleep(0.5)
 
@@ -160,8 +163,10 @@ async def sendMonitorCovid(ctx):
 # all about voice channel
 # call to a voice client and
 @client.command()
-async def bind(ctx, arg):
-  await player.bind(client, ctx, arg)
+async def bind(ctx):
+  await ctx.send("masook")
+
+  await player.bind(client, ctx)
 
 @client.command()
 async def play(ctx, *arg):
@@ -173,33 +178,9 @@ async def latency(ctx):
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 @client.command() # set pass n mail
 async def ip(ctx):
   await ctx.send("20.85.244.255")
-
-
-
-
-
-
-
-
 
 
 print(TOKEN)

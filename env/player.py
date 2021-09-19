@@ -9,11 +9,19 @@ try:
 except:
   pass
 
-async def bind(client, ctx, arg):
-    if ctx.message.author.voice is not None:
-        newPlayer = Player(client, ctx.author.voice.channel, ctx.channel, 80)
-        newPlayer.start()
-        playerList.append(newPlayer)
+async def bind(client, ctx):
+    try:
+        await ctx.send(f"voice = {ctx.message.author.voice}")
+        if ctx.message.author.voice is not None:
+            newPlayer = Player(client, ctx.author.voice.channel, ctx.channel, 80)
+            newPlayer.connect(ctx.author.voice.channel)
+            newPlayer.start()
+            await ctx.send(f"log channel = {newPlayer.logChannel}")
+            await ctx.send(f"voice channel = {newPlayer.channel}")
+            playerList.append(newPlayer)
+        await ctx.send(playerList)
+    except Exception:
+        await ctx.send(Exception)
 
 async def play(client, ctx, arg):
     for player in playerList:
@@ -68,9 +76,12 @@ class Player(discord.VoiceClient, threading.Thread):
             await asyncio.sleep(1)
 
     def run(self):
+        print("running...")
         while self.is_connected():
             loop = asyncio.get_event_loop()
             asyncio.set_event_loop(loop)
+            print(loop)
+            loop.run_until_complete(lambda: self.logChannel.send("running"))
             while self.pointerPlayer < len(self.songQueue):
                 loop.run_until_complete(self.playSong(self.songQueue[self.pointerPlayer]))
                 while self.is_playing:
