@@ -1,4 +1,4 @@
-from __future__ import unicode_literals
+from __future__ import unicode_literals, annotations
 from types import SimpleNamespace
 #%%
 import discord, asyncio
@@ -9,12 +9,15 @@ from env import *
 #import time
 from discord.ext import commands
 from dotenv import load_dotenv
-# command prefix s-
-client = commands.Bot(command_prefix="s-")
 
 # environment variable
 load_dotenv('.env')
 TOKEN = os.getenv('TOKEN')
+PREFIX = os.getenv('PREFIX')
+
+# command prefix z-
+client = commands.Bot(command_prefix=f"{PREFIX}-")
+
 
 class Server():
   def __init__(self, id):
@@ -46,9 +49,11 @@ except:
 #       newClass = Server(message.guild.id)
 #       servers.append(newClass)
 #       f.seek(0)
-#       f.write(str(servers))
+#       f.write(servers)
 #       f.truncate()
 #     f.close()
+    
+
 # event
 @client.event # bot online (saat .py ini dijalankan)
 async def on_ready():
@@ -154,7 +159,7 @@ async def sendMonitorCovid(ctx):
 @client.command()
 async def play(ctx, *arg):
   await player.play(client, ctx, *arg)
-  if ctx.message.content.contains('allah'):
+  if 'allah' in ctx.message.content:
     await ctx.send('mashallah brother, keep up your iman')
 
 @client.command()
@@ -169,18 +174,21 @@ async def leave(ctx):
   for voi in voice_clients:
     if voi.channel == voice_channel:
       voice_client = voi
-      await ctx.voice_client.stop()
-      await voice_client.disconnect()
       break
-    await player.clearQueue()
   else:
-    pass
+    await ctx.send("kamu atau aku engga di voice channel \:(")
+    return
+  voice_client.stop()
+  await voice_client.disconnect()
+  await player.clearQueue(ctx)
+
 @client.command()
 async def queue(ctx):
   await player.queue(ctx)
 @client.command()
 async def clearq(ctx):
-  await player.clearQueue(ctx, ctx.message.guild.id) 
+  await player.clearQueue(ctx)
+
 @client.command()
 async def remove(ctx):
   await player.rmFromQueue(ctx)
