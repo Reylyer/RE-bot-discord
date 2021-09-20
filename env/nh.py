@@ -62,6 +62,15 @@ async def seerNH_here(client, ctx, *args):
   """
   # get channel where seerNH_here invoked
   channel = discord.utils.get(client.get_all_channels(), name=str(ctx.channel))
+
+  sessionNameList = [arg for arg in args if "--sessionName=" in arg]
+  print(sessionNameList)
+  if len(sessionNameList) is 1:
+    sessionName = sessionNameList[0][sessionNameList[0].index("=") + 1 :]
+  else:
+    sessionName = ""
+  print(f"sessionName = {sessionName}")
+
   with open(f"server/{ctx.guild.id}/nhSessions.json", "r+") as f:
     content = f.read()
     nhSessions = json.loads(content, object_hook= lambda o: SimpleNamespace(**o))
