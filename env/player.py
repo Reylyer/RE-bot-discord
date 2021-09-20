@@ -3,7 +3,7 @@ import asyncio, discord, datetime, youtube_dl, threading, json
 from posixpath import pardir
 # from discord.enums import Theme
 from youtubesearchpython import VideosSearch
-import os
+import os #, shutil
 from types import SimpleNamespace
 
 class ServerQueue:
@@ -13,23 +13,24 @@ class ServerQueue:
     self.curQueue = 0
     self.songQueue = []
   def checkQueueResidue(self):
-    dirMsg = ""
-    if not os.path.exists(f'server/{self.serverID}'):
+    dirMsg = "" 
+    if not os.path.exists(f'server/{self.serverID}'): 
       os.makedirs(f'server/{self.serverID}')
       dirMsg += f"server {self.serverID} made"
     try:
-      os.remove(f'server/{self.serverID}/music{self.curQueue}')
-      dirMsg += f"removed at {self.curQueue}"
+      os.remove(f"./server/{self.serverID}/music{self.queueLen}.mp3") # delete dir and its content
+      dirMsg += f"residue removed at {self.queueLen}"
     except:
-      dirMsg += "no queue residue found\n"
+      dirMsg += "no queue residue found" 
+    self.queueLen = len(self.songQueue)
     return dirMsg
   
 class Song:
-  def __init__(self, metaInfo, link, queueNum):
+  def __init__(self, metaInfo, link):
     self.metaInfo = metaInfo
     self.link = link
-
     pass
+
 try:
   os.mkdir('server')
 except:
@@ -60,31 +61,21 @@ async def play(client, ctx, *arg):
       # WHAT THE FUCK WITH THIS MESSY CODE
       channel = ctx.message.author.voice.channel
       voice_client = discord.utils.get(client.voice_clients, guild=ctx.guild) 
-      try:
-        serverID = f"{ctx.message.guild.id}" 
-      except Exception as e:
-        await ctx.send(e)
+      serverID = str(ctx.message.guild.id) 
       
       # jadi fungsi bawah ini tu return 1 klo di list serverqueues ada yg mengandung serverID tertentu, return none klo gaada
-      ###
-      for serverQueue in serverQueues:
-        await ctx.send(serverQueue)
-      try:
-        if next((1 for serverQueue in serverQueues if serverID in serverQueue.serverID), None) is None: 
-          serverQueues.append(ServerQueue(serverID))
-        serverReference = findServerByIDTryFix(serverID) # ni terlalu padet euy
-      except Exception as e:
-        await ctx.send(f"FINDSERVERBYIDMU MASALAH MAS\n{e}")
+      if next((1 for serverQueue in serverQueues if serverID in serverQueue.serverID), None) is None: 
+        serverQueues.append(ServerQueue(serverID))
+      serverReference = findServerByIDTryFix(serverID) # ni terlalu padet euy
       dirMsg = serverReference.checkQueueResidue()
       await ctx.send(dirMsg)
-      # PLIS REFERENCE BUKAN COPY WKWKWKWKWKWKWWKWKWK masalahnya kalo list reference
-
-      #lah ini ngapa ke run ndiri?
+ 
       # serverQueue = findServerByID(serverID) # ni terlalu padet euy 
       
-      await ctx.send(serverReference)
-      await ctx.send(f"server id: {serverReference.serverID}")
-      await ctx.send(f"voice_client = {voice_client}")
+      await ctx.send(f"current working server: {serverReference.serverID}")
+      # await ctx.send(f"server id: {serverReference.serverID}")
+      # await ctx.send(f"voice_client = {voice_client}")
+
       if not voice_client is None: #test if voice channel exists
         await ctx.send(f"connecting to {ctx.message.author.voice.channel} voice channel")
         if not voice_client.is_connected():
@@ -97,7 +88,7 @@ async def play(client, ctx, *arg):
       
       # download
       await ctx.send(f"downloading: <{arg}>")
-      await ctx.send(f"voice_client = {voice_client}")
+      # await ctx.send(f"voice_client = {voice_client}")
       # await ctx.send(f"type of serverIndex = {type(serverIndex)}")
       # try:
       
@@ -109,19 +100,14 @@ async def play(client, ctx, *arg):
       #     await ctx.send(serverQueues)
       
       
-      #aowkoawkaokaokwo pake server index ku
-      # oh si index cuman buat nyari servernya? ampe buat method find server by id wkkwk 
-      #hmmm
+   
       # create download thread and start it
-
-      # ini kayaknya cok emang serverQueues  DICt I think not, just a pure class trykk
       downloadThread = DownloadThread(f"threadXXXgaming-{serverReference.curQueue}", arg, serverID)
       downloadThread.start()
 
       # create wait var for time memory
-      waiting = 0
-
       # wait until downloadThread has attribute / property 'meta' i.e. downloadThread.meta
+      waiting = 0
       while not hasattr(downloadThread, "meta"):# https://stackoverflow.com/questions/843277/how-do-i-check-if-a-variable-exists
         if waiting%5==0:
           await ctx.send(f"waiting thread {downloadThread.name} to finish, {waiting} seconds passed")
@@ -136,7 +122,7 @@ async def play(client, ctx, *arg):
       meta = downloadThread.meta
       # creating song object
       
-      song = Song(meta, arg, serverReference.queueLen)
+      song = Song(meta, arg)
       serverReference.songQueue.append(song)
       queueLen = len(serverReference.songQueue) # songQUeueu harusnya co nes eue EUE
       serverReference.queueLen = queueLen
@@ -159,7 +145,7 @@ async def play(client, ctx, *arg):
           sendPlaying = True
         # 👍 
         await asyncio.sleep(1)
-      # disconnect after the player has finished
+      # stoop after the player has finished
       voice_client.stop()
       
     except Exception as e:
@@ -189,7 +175,7 @@ class DownloadThread(threading.Thread):
             'key': 'FFmpegExtractAudio',
             'preferredcodec': 'mp3',
             'preferredquality': '192',
-        }], #kek gini? # iyep padahal cuman buat ambil properti queuelen su ngambilnya object cuman sekali doang lagi akwokawokawokawoa slow but works noo comment try?yyyyyy
+        }], 
         'outtmpl':f'server/{self.serverid}/music{subjectServerQueue.queueLen}.mp3',
         'external-downloader': 'aria2c',
         #'external-downloader-args': '-x 2',
@@ -197,32 +183,15 @@ class DownloadThread(threading.Thread):
     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
       meta = ydl.extract_info(self.link)
       ydl.download([self.link])
-      #downloadThread = threading.Thread(target=ydl.download, args=([link]), name=f"threadXXXgaming - {meta['title']}")
       self.meta =  meta
-# def downloadmp3(link: str, serverid: str, serverIndex: int) -> list[object, dict]:
-#   ydl_opts = {
-#       'format': 'bestaudio/best',
-#       'postprocessors': [{
-#           'key': 'FFmpegExtractAudio',
-#           'preferredcodec': 'mp3',
-#           'preferredquality': '192',
-#       }],
-#       'outtmpl':f'server/{serverid}/music{serverQueues[serverIndex].queueLen}.mp3',
-#   }
-#   serverQueues[serverIndex].queueLen +=1
-#   with youtube_dl.YoutubeDL(ydl_opts) as ydl:
-#     meta = ydl.extract_info(link) # 
-#     downloadThread = threading.Thread(target=ydl.download, args=([link]), name=f"threadXXXgaming - {meta['title']}")
-#     return downloadThread, meta
 
 # In Progress
 async def addSongToQueue(arg):
   return 
 
 async def clearQueue(ctx):
-  serverReference = findServerByIDTryFix(ctx.message.guild.id)
+  serverReference = findServerByIDTryFix(str(ctx.message.guild.id))
   songCleared = 0
-  msg = ""
   # try:
   #   msg += f"active threads : {threading.active_count()}\n"
   #   for thread in threading.enumerate():
@@ -230,22 +199,20 @@ async def clearQueue(ctx):
   # except Exception as e:
   #   msg += e
   try:
-    for songNum in range(0,len(serverReference.songQueue)):
+    for songNum in range(0,serverReference.queueLen):
       #check if the song is playing or the list is empty
       if(serverReference.curQueue != songNum): 
         try:
-          os.remove(f"server/{serverReference.serverID}/music{songNum}.mp3")
+          os.remove(f"./server/{serverReference.serverID}/music{songNum}.mp3")
           songCleared+=1
         except Exception as e:
           await ctx.send(f"error message : {e}\nqueue number {songNum} failed to be erased,\n")
     serverReference.songQueue = []
     serverReference.curQueue=0
     serverReference.queueLen = len(serverReference.songQueue)
-    msg+=f"{songCleared} songs removed from queue\n"
+    await ctx.send(f"{songCleared} songs removed from queue\n")
   except Exception as e:
-    msg+="clear queue failed\n" + e
-    pass
-  await ctx.send(msg)
+    await ctx.send("clear queue failed\n" + e)
 
 
 async def queue(ctx):
@@ -277,15 +244,6 @@ async def voice_status(ctx, client):
   else:
     await channel.connect()
       
-def getInfoYoutube(linkYoutubeOrSongName):
-  """mengembalikan informasi video\n
-  url\n
-  judul\n
-  durasi
-  """
-
-
-
 async def rmFromQueue(ctx):
   index = int(ctx.message.content)
   serverid = ctx.message.guild.id
@@ -302,8 +260,7 @@ async def rmFromQueue(ctx):
   return
   
 def searchVideoByName(namaLagu):
-  """ VideoSearch Object
-  """
+  """ VideoSearch Object"""
   videosSearch = VideosSearch(namaLagu, limit = 2)
   return videosSearch
 
