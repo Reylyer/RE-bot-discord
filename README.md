@@ -3,9 +3,9 @@ see bot in testing: https://discord.gg/CvvJuAQaXh
 
 ## Future update
 - add parameter tag ✅
-- add parameter interval
+- add parameter interval ✅
 - multiple server
-- multiple channel
+- multiple channel ✅
 - add tags in embed preview ✅
 - exclude some tag
 - end / terminate scraping
@@ -15,7 +15,7 @@ see bot in testing: https://discord.gg/CvvJuAQaXh
 ## music player
 - search ✅
 - pause
-- skip
+- skip ✅
 - song info ✅
 - queue ✅
 - remove queue
