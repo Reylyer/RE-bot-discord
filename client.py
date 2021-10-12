@@ -1,5 +1,4 @@
 from __future__ import unicode_literals
-from types import SimpleNamespace
 #%%
 import discord, asyncio
 import json
@@ -9,6 +8,7 @@ from env import *
 #import time
 from discord.ext import commands
 from dotenv import load_dotenv
+from env.player import Player
 
 
 
@@ -18,46 +18,28 @@ TOKEN = os.getenv('TOKEN')
 PREFIX = os.getenv('PREFIX')
 print(PREFIX)
 # command prefix from .env
-client = commands.Bot(command_prefix=str(PREFIX))
+client = commands.Bot(command_prefix=str(PREFIX) + "\\")
 class Server():
-  def __init__(self, id):
-    self.id = id
-    
-  nhSession = []
-  savedCodes = []
-  
-try:
-  f = open("servers.json")
-  f.close()
-except:
-  with open("servers.json", "w") as f:
-    f.write(json.dumps([]))
-    f.close()
-try:
-  os.mkdir('servers')
-except:
-  pass
+    def __init__(self, id):
+        self.id = id
+        
+    nhSession = []
+    savedCodes = []
+binded = False
+playerz = ""
 
-    
-# @client.event
-# async def on_message(message):
-#   with open("servers.json", "r+") as f:
-#     content = f.read()
-#     try:
-#       servers = json.loads(content, object_hook= lambda o: SimpleNamespace(**o))
-#     except Exception as e:
-#       await message.reply(e)
-#     for server in servers:
-#       if server.id is message.guild.id:
-#         pass
-#     else:
-#       newClass = Server(message.guild.id)
-#       servers.append(newClass)
-#       f.seek(0)
-#       f.write(servers)
-#       f.truncate()
-#     f.close()
-    
+try:
+    f = open("servers.json")
+    f.close()
+except:
+    with open("servers.json", "w") as f:
+        f.write(json.dumps([]))
+        f.close()
+try:
+    os.mkdir('servers')
+except:
+    pass
+
 
 # event
 @client.event # bot online (saat .py ini dijalankan)
@@ -74,11 +56,37 @@ async def on_leave(member):
     print(f"{member} has left... ")
 
 
+@client.event
+async def on_message(ctx):
+    global binded
+    global playerz
+    if ctx.author.bot:
+        return
 
-@client.command() #s-ping
-async def ping(ctx):
-    await ctx.send(f"pong! {round(client.latency * 1000)}ms")
-    print(f"sent! message : pong! {round(client.latency * 1000)}ms")
+    # await ctx.channel.send(f"{ctx.channel}, binded = {binded}")
+    if ctx.channel.name == "invoke-music" and binded:
+        await ctx.channel.send("searching..")
+        try:
+            await playerz.addToQueue(ctx.content)
+        except Exception as e:
+            await ctx.channel.send(e)
+    else:
+        if ctx.content == PREFIX + "ping":
+            await ctx.channel.send(f"pong! {round(client.latency * 1000)}ms")
+            print(f"sent! message : pong! {round(client.latency * 1000)}ms")
+        elif ctx.content == PREFIX + "bind":
+            await ctx.channel.send("init..")
+            binded = True
+            playerz = await player.bind(client, ctx)
+            await playerz.launch()
+            print("Thread launched")
+            playerz.start()
+            print("Thread started")
+
+
+
+# @client.command() #s-ping
+# async def ping(ctx):
 
 @client.command() # s-clear
 async def clear(ctx, banyak = 2):
@@ -99,9 +107,9 @@ async def ban(ctx, member, *, reason = None):
 
 @client.command()
 async def mention(ctx, member : discord.Member,  amount):
-  for _ in range(int(amount)):
-    await ctx.send(f"OI! {member.mention()}")
-    await asyncio.sleep(0.5)
+    for _ in range(int(amount)):
+        await ctx.send(f"OI! {member.mention()}")
+        await asyncio.sleep(0.5)
 
 
 
@@ -111,22 +119,22 @@ async def mention(ctx, member : discord.Member,  amount):
 
 # NH SET
 try:
-  f = open("nhcode.json")
-  f.close()
-except:
-  with open("nhcode.json", "w") as f:
-    f.write(json.dumps([]))
+    f = open("nhcode.json")
     f.close()
+except:
+    with open("nhcode.json", "w") as f:
+        f.write(json.dumps([]))
+        f.close()
 
 
 @client.command()
 async def stopSeering(ctx, sessionName):
-  await nh.stopSeering(client, ctx, sessionName)
-  await ctx.send("ok")
+    await nh.stopSeering(client, ctx, sessionName)
+    await ctx.send("ok")
 
 @client.command() #s-seerNH_here
 async def seerNH_here(ctx, *args):
-  await nh.seerNH_here(client, ctx, *args)
+    await nh.seerNH_here(client, ctx, *args)
 
 
 
@@ -134,53 +142,52 @@ async def seerNH_here(ctx, *args):
 
 
 try:
-  f = open("MAHASISWA.json")
-  f.close()
-except:
-  with open("MAHASISWA.json", "w") as f:
-    f.write(json.dumps([]))
+    f = open("MAHASISWA.json")
     f.close()
+except:
+    with open("MAHASISWA.json", "w") as f:
+        f.write(json.dumps([]))
+        f.close()
 
 @client.command() #set dummy text
 async def dummy_text(ctx, amo = 3):
-  for _ in range(0, amo):
-    ctx.send("this is a dummy text.")
+    for _ in range(0, amo):
+        ctx.send("this is a dummy text.")
 
 @client.command() # set pass n mail
 async def set_credential(ctx, properties, value):
-  await absensi.set_credential(ctx, properties, value)
+    await absensi.set_credential(ctx, properties, value)
 
 @client.command() # MAIN FUNCTION
 async def absen(ctx, codeOrLink):
-  await absensi.absen(ctx, codeOrLink)
+    await absensi.absen(ctx, codeOrLink)
     
 @client.command()
 async def sendMonitorCovid(ctx):
-  with open("MAHASISWA.json", "w+") as f:
-    pass
-  
+    with open("MAHASISWA.json", "w+") as f:
+        pass
+
 
 # all about voice channel
 # call to a voice client and
-@client.command()
-async def bind(ctx):
-  await ctx.send("masook")
+# @client.command()
+# async def bind(ctx):
 
-  await player.bind(client, ctx)
 
-@client.command()
-async def play(ctx, *arg):
-  await player.play(client, ctx, *arg)
+# @client.command()
+# async def play(ctx, *arg):
+#     await player.play(client, ctx, *arg)
 
 @client.command()
 async def latency(ctx):
-  pass
+    pass
 
 
 
 @client.command() # set pass n mail
 async def ip(ctx):
-  await ctx.send("20.85.244.255")
+    await ctx.send("20.85.244.255")
+
 
 
 print(TOKEN)

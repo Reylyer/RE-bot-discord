@@ -2,26 +2,21 @@ from __future__ import annotations
 import asyncio, discord, youtube_dl, threading, re, unicodedata, youtubesearchpython, os
 from posixpath import pardir
 
-playerList = []
-
 try:
-  os.mkdir('servers')
+    os.mkdir('servers')
 except:
-  pass
+    pass
+
 
 async def bind(client, ctx):
-    try:
-        await ctx.send(f"voice = {ctx.message.author.voice}")
-        if ctx.message.author.voice is not None:
-            newPlayer = Player(client, ctx.author.voice.channel, ctx.channel, 80)
-            newPlayer.connect(ctx.author.voice.channel)
-            newPlayer.start()
-            await ctx.send(f"log channel = {newPlayer.logChannel}")
-            await ctx.send(f"voice channel = {newPlayer.channel}")
-            playerList.append(newPlayer)
-        await ctx.send(playerList)
-    except Exception:
-        await ctx.send(Exception)
+    # await ctx.channel.send(f"voice = {ctx.author.voice}")
+    if ctx.author.voice is not None:
+        newPlayer = Player(client, ctx.author.voice.channel, ctx.channel, 80)
+        #newPlayer.start()
+        await ctx.channel.send(f"log channel = {newPlayer.logChannel}")
+        await ctx.channel.send(f"voice channel = {newPlayer.channel}")
+        await ctx.channel.send("out...")
+        return newPlayer
 
 async def play(client, ctx, arg):
     for player in playerList:
@@ -43,7 +38,7 @@ async def latency():
 """
 jika pertama kali panggil play, buat object player lalu panggil bind() ke voice_channel
 handle exception:
-  tidak di voice_channel
+tidak di voice_channel
 
 sekarang queue di atur oleh class
 
@@ -69,40 +64,38 @@ class Player(discord.VoiceClient, threading.Thread):
             pass
         
     async def launch(self):
-        await self.connect(self.channel)
-        while self.is_connected():
-            # loop player
-            self.play()
-            await asyncio.sleep(1)
+        await self.connect(reconnect = True, timeout= 30)
+        # while self.is_connected():
+            
+        #     await asyncio.sleep(1)
 
     def run(self):
-        print("running...")
-        while self.is_connected():
+        try:
+            print("running...")
             loop = asyncio.get_event_loop()
             asyncio.set_event_loop(loop)
-            print(loop)
-            loop.run_until_complete(lambda: self.logChannel.send("running"))
-            while self.pointerPlayer < len(self.songQueue):
-                loop.run_until_complete(self.playSong(self.songQueue[self.pointerPlayer]))
-                while self.is_playing:
-                    loop.run_until_complete(self.sleep())
-                self.pointerPlayer += 1
-
-    async def playSong(self, fileName):
-        self.play(discord.FFmpegAudio(f'servers/{self.server_id}/musics/{fileName}.mp3'))
-    
-    async def sleep():
-        await asyncio.sleep(1)
+            while self.is_connected():
+                print("waiting...")
+                if self.pointerPlayer < len(self.songQueue):
+                    print("song now", self.songQueue[self.pointerPlayer])
+                    self.play(self.songQueue[self.pointerPlayer].path)
+                    while self.is_playing:
+                        loop.run_until_complete(asyncio.sleep(1))
+                    self.pointerPlayer += 1
+                else:
+                    loop.run_until_complete(asyncio.sleep(1))
+        except Exception as e:
+            print(e)
 
         
     def startQueue(self):
         while self.pointerPlayer != len(self.songQueue):
-            self.play
+            self.play()
 
     async def addToQueue(self, arg: str):
         # getting link and metaInfo part
         try:
-            metaInfo = youtubesearchpython.VideosSearch(arg, 1)[0] if ".com" not in arg else youtubesearchpython.Video.getInfo(arg)
+            metaInfo = youtubesearchpython.VideosSearch(arg, limit = 2).result()["result"][0] if ".com" not in arg else youtubesearchpython.Video.getInfo(arg)
             link = metaInfo["link"]
         except Exception:
             print(Exception)
@@ -125,15 +118,20 @@ class Player(discord.VoiceClient, threading.Thread):
             await self.logChannel.send(f"{metaInfo['title']} not added to queue")
             return
         # saving part
-        newSong = self.Song(metaInfo, fileName)
+        path = f'./servers/{self.channel.guild.id}/musics/{fileName}.mp3'
+        await self.logChannel.send(f"metaInfo = {metaInfo}")
+        await self.logChannel.send(f"path = {path}")
+
+        newSong = self.Song(metaInfo, fileName, path)
         self.songQueue.append(newSong)
         
     def removeQueue(self):
         pass
 
     class Song:
-        def __init__(self, metaInfo: object, fileName: str):
+        def __init__(self, metaInfo: object, fileName: str, path: str):
             self.fileName = fileName
+            self.path = path
             self.link = metaInfo["link"]
             self.thumbnailUrl = metaInfo["thumbnail"][0]["url"]
             self.viewCount = metaInfo["viewCount"]
@@ -150,13 +148,10 @@ class Player(discord.VoiceClient, threading.Thread):
         
         def run(self):
             print(f"starting thread {self.name}")
-            try:
-              self.downloadmp3()
-            except :
-              raise Exception()
+            self.downloadmp3()
             print(f"exiting thread {self.name}")
 
-        def downloadmp3(self, songName: str):
+        def downloadmp3(self):
             ydl_opts = {
                 'format': 'bestaudio/best',
                 'postprocessors': [{
@@ -164,8 +159,10 @@ class Player(discord.VoiceClient, threading.Thread):
                     'preferredcodec': 'mp3',
                     'preferredquality': '192',
                 }],
-                'outtmpl':f'./servers/{self.server_id}/musics/{songName}.mp3',
+                'outtmpl':f'./servers/{self.serverid}/musics/{self.songName}.mp3',
                 'external-downloader': 'aria2c',
+                'ignoreerrors': 'true',
+                'quiet': 'true',
             }
             with youtube_dl.YoutubeDL(ydl_opts) as ydl:
                 meta = ydl.extract_info(self.link)
@@ -190,4 +187,4 @@ class Player(discord.VoiceClient, threading.Thread):
 
 
 def getThreadCount():
-  return threading.active_count(), threading.current_thread()
+    return threading.active_count(), threading.current_thread()
