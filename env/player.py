@@ -18,18 +18,6 @@ async def bind(client, ctx):
         await ctx.channel.send("out...")
         return newPlayer
 
-async def play(client, ctx, arg):
-    for player in playerList:
-        if player.server_id == ctx.message.guild.id:
-            pass
-    else:
-        if ctx.message.author.voice is not None:
-            newPlayer = Player(client, ctx.author)
-            playerList.append(newPlayer)
-            await newPlayer.launch()
-        else:
-            await ctx.send("Ku harus kemana sayang...")
-
 async def latency():
 
     pass
