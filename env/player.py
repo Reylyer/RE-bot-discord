@@ -1,5 +1,5 @@
 from __future__ import annotations
-import asyncio, discord, datetime, youtube_dl, threading, json
+import asyncio, discord, youtube_dl, threading, re, unicodedata, os
 from posixpath import pardir
 # from discord.enums import Theme
 from youtubesearchpython import VideosSearch
@@ -18,7 +18,7 @@ class ServerQueue:
       os.makedirs(f'server/{self.serverID}')
       dirMsg += f"server {self.serverID} made"
     try:
-      os.remove(f"./server/{self.serverID}/music{self.queueLen}.mp3") # delete dir and its content
+      os.remove(f"./server/{self.serverID}{self.songQueue[-1].title}.mp3") # delete dir and its content
       dirMsg += f"residue removed at {self.queueLen}"
     except:
       dirMsg += "no queue residue found" 
@@ -26,9 +26,10 @@ class ServerQueue:
     return dirMsg
   
 class Song:
-  def __init__(self, metaInfo, link):
+  def __init__(self, metaInfo, link, titlesluged):
     self.metaInfo = metaInfo
     self.link = link
+    self.title = titlesluged
     pass
 
 try:
@@ -36,6 +37,30 @@ try:
 except:
   pass
 serverQueues = []
+looped = False
+
+async def loopThis(client, ctx):
+  global looped
+  await ctx.send("looped")
+  channel = ctx.message.author.voice.channel
+  voice_client = discord.utils.get(client.voice_clients, guild=ctx.guild) 
+  serverID = str(ctx.message.guild.id)
+  serverReference = findServerByIDTryFix(serverID)
+  looped = True
+  while voice_client.is_playing():
+    await asyncio.sleep(1)
+  while looped:
+    voice_client.play(discord.FFmpegPCMAudio(f'server/{serverID}/{serverReference.songQueue[serverReference.curQueue - 1].title}.mp3'), after=lambda e: print("done", e))
+    while voice_client.is_playing():
+      # 👍 
+      await asyncio.sleep(1)
+    # stoop after the player has finished
+    voice_client.stop()
+
+async def stopLoop(ctx):
+  global looped
+  looped = False
+  await ctx.send("out of loop")
 
 async def play(client, ctx, *arg):
   # grab the user who sent the command
@@ -47,7 +72,7 @@ async def play(client, ctx, *arg):
   if not "youtu" in arg:
     arg = " ".join(arg)
     arg = searchVideoByName(arg)
-
+    metatemp = arg.result()["result"][0]
     arg = arg.result()["result"][0]["link"]
 
     # await ctx.send(arg)
@@ -100,29 +125,29 @@ async def play(client, ctx, *arg):
       #     await ctx.send(serverQueues)
       
       
-   
+    
       # create download thread and start it
-      downloadThread = DownloadThread(f"threadXXXgaming-{serverReference.curQueue}", arg, serverID)
+      downloadThread = DownloadThread(f"threadXXXgaming-{serverReference.curQueue}", arg, serverID, metatemp)
       downloadThread.start()
 
       # create wait var for time memory
       # wait until downloadThread has attribute / property 'meta' i.e. downloadThread.meta
       waiting = 0
       while not hasattr(downloadThread, "meta"):# https://stackoverflow.com/questions/843277/how-do-i-check-if-a-variable-exists
-        if waiting%5==0:
+        if waiting%60==0:
           await ctx.send(f"waiting thread {downloadThread.name} to finish, {waiting} seconds passed")
         await asyncio.sleep(1)
         waiting += 1
-        if waiting > 20: # dengerin dosen dulu ,setuju
-          # terminate thread
-          await ctx.send("reaching time limit, terminating...")
-          return  #bisa to? kek di c kan jadinya blm dicoba sih, gatau error ato ga wkkwkwk
+        # if waiting > 20: # dengerin dosen dulu ,setuju
+        #   # terminate thread
+        #   await ctx.send("reaching time limit, terminating...")
+        #   return  #bisa to? kek di c kan jadinya blm dicoba sih, gatau error ato ga wkkwkwk
       
       # get meta from downloadThread
       meta = downloadThread.meta
       # creating song object
       
-      song = Song(meta, arg)
+      song = Song(meta, arg, slugify(metatemp["title"]))
       serverReference.songQueue.append(song)
       queueLen = len(serverReference.songQueue) # songQUeueu harusnya co nes eue EUE
       serverReference.queueLen = queueLen
@@ -136,7 +161,7 @@ async def play(client, ctx, *arg):
       # create StreamPlayer
       # Note: stupid solution but at least it worked
       # if not user.voice.is_connected():
-      voice_client.play(discord.FFmpegPCMAudio(f'server/{serverID}/music{serverReference.curQueue}.mp3'), after=lambda e: print("done", e))
+      voice_client.play(discord.FFmpegPCMAudio(f'server/{serverID}/{serverReference.songQueue[serverReference.curQueue].title}.mp3'), after=lambda e: print("done", e))
       serverReference.curQueue+=1
       sendPlaying = False
       while voice_client.is_playing():
@@ -155,11 +180,12 @@ async def play(client, ctx, *arg):
       await ctx.send(ctx.message.author.voice.channel)
 
 class DownloadThread(threading.Thread):
-  def __init__(self, name, link, serverid):
+  def __init__(self, name, link, serverid, metatemp):
     threading.Thread.__init__(self)
     self.name = name
     self.link = link
     self.serverid = serverid
+    self.metatemp = metatemp
     # self.serverIndex = serverIndex
   
   def run(self) -> None:
@@ -168,7 +194,7 @@ class DownloadThread(threading.Thread):
     print(f"exiting thread {self.name}")
 
   def downloadmp3(self) -> dict:
-    subjectServerQueue = findServerByIDTryFix(self.serverid) # ini butuh ServerQueue Object oalah
+    subjectServerQueue = findServerByIDTryFix(self.serverid)
     ydl_opts = {  
         'format': 'bestaudio/best',
         'postprocessors': [{
@@ -176,8 +202,10 @@ class DownloadThread(threading.Thread):
             'preferredcodec': 'mp3',
             'preferredquality': '192',
         }], 
-        'outtmpl':f'server/{self.serverid}/music{subjectServerQueue.queueLen}.mp3',
-        'external-downloader': 'aria2c',
+        'outtmpl':f'server/{self.serverid}/{slugify(self.metatemp["title"])}.mp3',
+        # 'external-downloader': 'aria2c',
+        #'quiet' : "true",
+        'ignoreerrors' : "true",
         #'external-downloader-args': '-x 2',
     }
     with youtube_dl.YoutubeDL(ydl_opts) as ydl:
@@ -278,3 +306,20 @@ def findServerByIDTryFix(serverid: str) -> ServerQueue:
   for serverQueue in serverQueues:
     if serverid in serverQueue.serverID:
       return serverQueue
+
+def slugify(value, allow_unicode=False):
+        """
+        Me taken from https://stackoverflow.com/questions/295135/turn-a-string-into-a-valid-filename
+        Taken from https://github.com/django/django/blob/master/django/utils/text.py
+        Convert to ASCII if 'allow_unicode' is False. Convert spaces or repeated
+        dashes to single dashes. Remove characters that aren't alphanumerics,
+        underscores, or hyphens. Convert to lowercase. Also strip leading and
+        trailing whitespace, dashes, and underscores.
+        """
+        value = str(value)
+        if allow_unicode:
+            value = unicodedata.normalize('NFKC', value)
+        else:
+            value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore').decode('ascii')
+        value = re.sub(r'[^\w\s-]', '', value.lower())
+        return re.sub(r'[-\s]+', '-', value).strip('-_')

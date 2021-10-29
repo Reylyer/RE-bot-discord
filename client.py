@@ -181,6 +181,12 @@ async def leave(ctx):
   voice_client.stop()
   await voice_client.disconnect()
   await player.clearQueue(ctx)
+@client.command()
+async def lt(ctx):
+  await player.loopThis(client, ctx)
+@client.command()
+async def sl(ctx):
+  await player.stopLoop(ctx)
 
 @client.command()
 async def queue(ctx):
