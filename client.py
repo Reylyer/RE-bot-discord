@@ -106,22 +106,22 @@ async def mention(ctx, member : discord.Member,  amount):
 
 # NH SET
 try:
-  f = open("nhcode.json")
-  f.close()
-except:
-  with open("nhcode.json", "w") as f:
-    f.write(json.dumps([]))
+    f = open("nhcode.json")
     f.close()
+except:
+    with open("nhcode.json", "w") as f:
+        f.write(json.dumps([]))
+        f.close()
 
 
 @client.command()
 async def stopSeering(ctx, sessionName):
-  await nh.stopSeering(client, ctx, sessionName)
-  await ctx.send("ok")
+    await nh.stopSeering(client, ctx, sessionName)
+    await ctx.send("ok")
 
 @client.command() #s-seerNH_here
 async def seerNH_here(ctx, *args):
-  await nh.seerNH_here(client, ctx, *args)
+    await nh.seerNH_here(client, ctx, *args)
 
 
 
