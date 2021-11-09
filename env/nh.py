@@ -26,7 +26,7 @@ class NhSession:
 
 
 try:
-    os.mkdir('server')
+    os.mkdir('servers')
 except:
     pass
 
@@ -36,7 +36,7 @@ async def stopSeering(client, ctx, sessionName):
     """
     # read json
     channel = discord.utils.get(client.get_all_channels(), name=str(ctx.channel))
-    with open(f"server/{ctx.guild.id}/nhSessions.json", "r+") as f:
+    with open(f"servers/{ctx.guild.id}/nhSessions.json", "r+") as f:
         content = f.read()
         nhSessions = json.loads(content, object_hook= lambda o: SimpleNamespace(**o))
         for nhSession in nhSessions:
@@ -72,11 +72,19 @@ async def seerNH_here(client, ctx, *args):
         sessionName = ""
     print(f"sessionName = {sessionName}")
     sys.stdout.flush()
-
     try:
-            os.mkdir(f"./servers/{ctx.message.guild.id}")
+        os.mkdir(f"./servers/{ctx.message.guild.id}")
     except:
         pass
+
+    try:
+        f = open(f"servers/{ctx.guild.id}/nhSessions.json", "r")
+        f.close()
+        print("yes", flush=True)
+    except:
+        with open(f"servers/{ctx.guild.id}/nhSessions.json", "w") as f:
+            f.write(json.dumps([]))
+            f.close()
         
     with open(f"servers/{ctx.guild.id}/nhSessions.json", "r+") as f:
         content = f.read()
@@ -86,12 +94,13 @@ async def seerNH_here(client, ctx, *args):
             if nhSession.sessionName is sessionName:
             # ketemu
                 await ctx.send(f"nhSession dengan nama {sessionName}, sudah dijalankan")
+                break
         else:
             await ctx.send(f"Tidak ada nhSession dengan nama {sessionName}")
 
-    await NHPLoop(channel, args)
+    await NHPLoop(channel, args, sessionName)
 
-async def NHPLoop(channel, args): # get 5 codes of popular art on main page
+async def NHPLoop(channel, args, sessionName): # get 5 codes of popular art on main page
   print(args)
   sys.stdout.flush()
   
@@ -163,13 +172,13 @@ async def NHPLoop(channel, args): # get 5 codes of popular art on main page
   print(f"amount = {amount}")
   sys.stdout.flush()
   
-  # session name
-  # valib input no spaces
-  sessionNameList = [arg for arg in args if "--sessionName=" in arg]
-  if len(sessionNameList) is 1:
-    sessionName = sessionNameList[0][sessionNameList[0].index("=") + 1:]
-  else:
-    sessionName = f"{channel.name}_{tag}_{freq}_{amount}"
+  # # session name
+  # # valib input no spaces
+  # sessionNameList = [arg for arg in args if "--sessionName=" in arg]
+  # if len(sessionNameList) is 1:
+  #   sessionName = sessionNameList[0][sessionNameList[0].index("=") + 1:]
+  if sessionName == "":
+      sessionName = f"{channel.name}_{tag}_{freq}_{amount}"
   print(f"session name = {sessionName}")
   sys.stdout.flush()
     
@@ -181,39 +190,39 @@ async def NHPLoop(channel, args): # get 5 codes of popular art on main page
   content = f.read()
   nhSessions = json.loads(content, object_hook= lambda o: SimpleNamespace(**o))
   for nhSession in nhSessions:
-    if nhSession.sessionName is sessionName:
-      await channel.send(f"There is conflict session name.\nSession with name '{sessionName}' is existed, try to use other name... TERMINATING")
-      info = "```py\nSession with same name:\n\n"
+    if nhSession.sessionName == sessionName:
+      await channel.send(f"Session with name '{sessionName}' is exist, trying to continue...")
+      info = "```py\nSession with the same name:\n\n"
       info += f"server      = {nhSession.server}\n"
       info += f"channel     = {nhSession.channel}\n"
       info += f"tag         = {nhSession.tag}\n"
       info += f"freq        = {nhSession.freq}\n"
-      info += f"amount      = {nhSession.amount}"
+      info += f"amount      = {nhSession.amount}\n"
       info += f"sessionName = {nhSession.sessionName}\n```"
       await channel.send(info)
+      await channel.send(f"kode terakhir = {nhSession.lastCodes}")
       f.close()
-      return
+      break
   else:
     await channel.send("sessionName check: OK")
     newNhSession = NhSession(tag, freq, amount, sessionName, channel.name, channel.guild.name)
     nhSessions.append(newNhSession)
     nhSessions = json.dumps([nhSession.__dict__ for nhSession in nhSessions], indent=4)
-    # ahasiswas = json.dumps([mahasiswa.__dict__ for mahasiswa in mahasiswas])
-    await channel.send(nhSessions)
+    # await channel.send(nhSessions)
     f.seek(0)
     f.write(nhSessions)
     f.truncate()
     f.close()
+    # lulus check informasi seering
+    info = "```py\nseering Info:\n\n"
+    info += f"server      = {channel.guild.name}\n"
+    info += f"channel     = {channel.name}\n"
+    info += f"tag         = {tag}\n"
+    info += f"freq        = {freq}\n"
+    info += f"amount      = {amount}\n"
+    info += f"sessionName = {sessionName}\n```"
+    await channel.send(info)
 
-  # lulus check informasi seering
-  info = "```py\nseering Info:\n\n"
-  info += f"server      = {channel.guild.name}\n"
-  info += f"channel     = {channel.name}\n"
-  info += f"tag         = {tag}\n"
-  info += f"freq        = {freq}\n"
-  info += f"amount      = {amount}\n"
-  info += f"sessionName = {sessionName}\n```"
-  await channel.send(info)
 
   nhSessionRunning = True
 
@@ -230,10 +239,8 @@ async def NHPLoop(channel, args): # get 5 codes of popular art on main page
     nhSessions = json.loads(content, object_hook= lambda o: SimpleNamespace(**o))
 
 
- #   await channel.send(nhSessions)
     try:
       for nhSession in nhSessions:
-  #      await channel.send(f"{nhSession.sessionName} == {sessionName}")
         print(f"{nhSession.sessionName} == {sessionName}")
         sys.stdout.flush()
         if nhSession.sessionName == sessionName:

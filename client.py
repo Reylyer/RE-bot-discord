@@ -3,7 +3,7 @@ from types import SimpleNamespace
 #%%
 import discord, asyncio
 import json
-import os
+import os, sys
 from env import *
 
 #import time
@@ -58,15 +58,18 @@ except:
 @client.event # bot online (saat .py ini dijalankan)
 async def on_ready():
     print("its ready!! let the message in!")
+    sys.stdout.flush()
 
 @client.event # saat ada member yang masuk
 async def on_join(member):
     print(f"{member} has joined the chat! Welcome!")
+    sys.stdout.flush()
     await member.send(f"{member} has joined the chat! Welcome!")
 
 @client.event # saat ada member yang keluar
 async def on_leave(member):
     print(f"{member} has left... ")
+    sys.stdout.flush()
 
 
 
@@ -74,23 +77,27 @@ async def on_leave(member):
 async def ping(ctx):
     await ctx.send(f"pong! {round(client.latency * 1000)}ms")
     print(f"sent! message : pong! {round(client.latency * 1000)}ms")
+    sys.stdout.flush()
 
 @client.command() # s-clear
 async def clear(ctx, banyak = 2):
     await ctx.channel.purge(limit=int(banyak))
     print(f"Message cleared! amount = {banyak}")
+    sys.stdout.flush()
 
 @client.command() # s-kick
 async def kick(ctx, member : discord.Member, *, reason = None):
     await member.kick(reason = reason)
     await ctx.send(f"{member.mention} has been kicked! get out! \nReason = {reason}")
     print(f"kicked a member, name = {member}")
+    sys.stdout.flush()
 
 @client.command() #s-ban
 async def ban(ctx, member : discord.Member, *, reason = None):
     await member.ban(reason = reason)
     await ctx.send(f"{member.mention} has been banned! let the hell purify your soul! \nReason = {reason}")
     print(f"banned a member, name = {member}")
+    sys.stdout.flush()
 
 @client.command()
 async def mention(ctx, member : discord.Member,  amount):
@@ -163,6 +170,19 @@ async def play(ctx, *arg):
     await ctx.send('mashallah brother, keep up your iman')
 
 @client.command()
+async def playrandom(ctx):
+  await ctx.send("played random song!\nTebak lagu apa!")
+  await player.playRandom(client, ctx)
+
+@client.command(aliases=['q'])
+async def quiz(ctx, timer = "30"):
+  await player.quiz(client, ctx, timer)
+
+@client.command(aliases=['sq'])
+async def stopquiz(ctx):
+  await player.stopquiz(ctx)
+
+@client.command()
 async def join(ctx):
     channel = ctx.author.voice.channel
     await channel.connect()
@@ -181,11 +201,11 @@ async def leave(ctx):
   voice_client.stop()
   await voice_client.disconnect()
   await player.clearQueue(ctx)
-@client.command()
-async def lt(ctx):
+@client.command(aliases=['lt'])
+async def loopthis(ctx):
   await player.loopThis(client, ctx)
-@client.command()
-async def sl(ctx):
+@client.command(aliases=['sl'])
+async def stopLoop(ctx):
   await player.stopLoop(ctx)
 
 @client.command()
@@ -206,7 +226,7 @@ async def pause(ctx):
 async def resume(ctx):
   if ctx.voice_client.is_paused():
     await ctx.voice_client.resume()
-@client.command()
+@client.command(aliases=['s'])
 async def stop(ctx):
   await ctx.voice_client.stop()
 @client.command()
@@ -238,6 +258,8 @@ async def ip(ctx):
 
 
 print(TOKEN)
+sys.stdout.flush()        
+
 client.run(TOKEN)
 
 # client.run("drop your discord bot token here")
