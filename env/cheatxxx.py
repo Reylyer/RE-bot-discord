@@ -1,4 +1,4 @@
-
+import discord
 
 class Vertex:
     def __init__(self, name) -> None:
@@ -23,11 +23,11 @@ class Graph:
             print(f"{'|'.join([f'{edge.start.name} {edge.end.name} {edge.weight}' for edge in ver.edges])}".replace("|", "\n\t"))
             print()
     
-async def djikstraGenerator(client, ctx, inputs):
+async def djikstraGenerator(client, ctx, util, inputs):
     try:
         print(inputs)
         uInputs = inputs.split("\n")
-        if uInputs[0] in ["help", "-h", "--help", "-help"]:
+        if util in ["help", "-h", "--help", "-help"]:
             await ctx.send(
 """
 ```cmd
@@ -80,7 +80,7 @@ baris terakhir : dari vertex apa ke vertex apa
 
         choosenOne.choosen = True
 
-        message ="```cmd\nTabel: \n"
+        message ="Tabel: \n"
         message += "V\t" +  "\t".join([a.name for a in inWork]) + "\n"
         while inWork:
 
@@ -119,18 +119,24 @@ baris terakhir : dari vertex apa ke vertex apa
                 if choosenOne == None or a.harga != None and a.harga < choosenOne.harga:
                     choosenOne = a
 
-        message += "\n" + f"jarak terpendek dari {awal} ke {akhir} adalah " + str(graphN.vertices[akhir].harga) +  f", dengan path : {'-'.join([a.name for a in graphN.vertices[akhir].path])}" + "```"
-        await ctx.send(message)
-        await ctx.send(
-"""untuk merapihkan ini ganti setiap `'    '` dengan `\\t`  
-one line python code:
-```py
-print('''paste here'''.replace("\t", "\\t"))
-```
-enjoy~
+        message += "\n" + f"jarak terpendek dari {awal} ke {akhir} adalah " + str(graphN.vertices[akhir].harga) +  f", dengan path : {'-'.join([a.name for a in graphN.vertices[akhir].path])}"
+        f = open("djiksTemp.bat", "w");
+        f.write(message)
+        f.close()
+        attachment = discord.File("djiksTemp.bat")
+        await ctx.send("enjoy~", file=attachment)
+#         await ctx.send(
+# """untuk merapihkan ini ganti setiap `'    '` dengan `\\t`  
+# one line python code:
+# ```py
+# print('''paste here'''.replace("\t", "\\t"))
+# ```
+# atau lihat dari attachment langsung
+# enjoy~
 
-"""
-        )
+# """, file=attachment
+#         )
+
     except Exception as e:
         await ctx.send(e)
         

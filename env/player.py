@@ -38,6 +38,18 @@ except:
 serverQueues = []
 looped = False
 
+async def show_cached(ctx):
+    fileString = "\n".join([str(a) for a in glob.glob("./server/*.mp3")])
+    try:
+        await ctx.send(fileString)
+    except:
+        f = open("cachedsong.txt", "w");
+        f.write(fileString)
+        f.close()
+        attachment = discord.File("cachedsong.txt")
+        await ctx.send("cuz its too long for discord, here in text file", file=attachment)
+
+
 async def loopThis(client, ctx):
     global looped
     await ctx.send("looped")
@@ -69,6 +81,7 @@ async def playRandom(client, ctx):
     choice = random.choice(filenames)
     print(choice)
     sys.stdout.flush()
+    
     
 
     voice_client.play(discord.FFmpegPCMAudio(choice), after=lambda e: print("done", e))

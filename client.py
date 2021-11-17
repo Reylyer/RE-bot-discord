@@ -100,7 +100,7 @@ join, leave, is_connected, is_playing, is_paused, voice_status
 
 ```cmd
 cheat:
-- djiksta(dg) <input> | lakukan generate table djikstra, pass help untuk melihat format input
+- djikstra(dg) <input> | lakukan generate table djikstra, pass help untuk melihat format input
 cooming soon
 ```
 
@@ -222,8 +222,8 @@ async def debug(ctx, *, code):
 # CHEAT ALGO
 
 @client.command(aliases=['dg'])
-async def djikstra(ctx, space,   *, arg):
-    await cheatxxx.djikstraGenerator(client, ctx, arg)
+async def djikstra(ctx, util,   *, arg = ""):
+    await cheatxxx.djikstraGenerator(client, ctx, util, arg)
 
 # all about voice channel
 @client.command(aliases=['p'])
@@ -261,6 +261,9 @@ async def loopthis(ctx):
 @client.command(aliases=['sl'])
 async def stoploop(ctx):
     await player.stopLoop(ctx)
+@client.command()
+async def show_cached(ctx):
+    await player.show_cached(ctx)
 
 # @client.command()
 # async def queue(ctx):
@@ -310,13 +313,6 @@ print(TOKEN)
 sys.stdout.flush()        
 
 client.run(TOKEN)
-
-
-
-# client.run("drop your discord bot token here")
-
-
-
 
 # sleep coroutine https://discordpy.readthedocs.io/en/stable/faq.html#what-is-a-coroutine
 
