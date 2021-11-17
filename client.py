@@ -22,17 +22,17 @@ client = commands.Bot(command_prefix=f"{PREFIX}-")
 class Server():
     def __init__(self, id):
         self.id = id
-      
+    
     nhSession = []
     savedCodes = []
-  
+
 try:
     f = open("servers.json")
     f.close()
 except:
-  with open("servers.json", "w") as f:
-    f.write(json.dumps([]))
-    f.close()
+    with open("servers.json", "w") as f:
+        f.write(json.dumps([]))
+        f.close()
     
 # @client.event
 # async def on_message(message):
@@ -73,6 +73,56 @@ async def on_leave(member):
     sys.stdout.flush()
 
 
+@client.command(aliases=["h", "c"])
+async def commands(ctx):
+    await ctx.send(
+"""
+```cmd
+general:
+- ping
+- clear
+- kick
+- ban
+- mention
+```
+
+```cmd
+player:
+- play(p) <nama_lagu> | menggunakan ytdl untuk mendownload lalu play
+- playrandom(pr) | memutar lagu random yang berasal dari cache yang pernah diplay
+- quiz(q) <optional:timeout> | sama dengan playrandom namun dengan default timeout 30 detik
+- stopquiz(sq) | menghentikan quiz (set var quizb to false)
+- loopthis(lt) | loop lagu terbaru dari play(confusing)
+- stoploop(sl) | stop loopthis
+not used much
+join, leave, is_connected, is_playing, is_paused, voice_status
+```
+
+```cmd
+cheat:
+- djiksta(dg) <input> | lakukan generate table djikstra, pass help untuk melihat format input
+cooming soon
+```
+
+```cmd
+absensi:
+JANGAN COBA MASUKAN CREDENTIAL ANDA UNTUK SEKARANG!
+- set_credential
+- absen
+- sendMonitorCovid
+- debug(d) <code> | experimental, use it well!
+```
+
+```cmd
+nhScraping:
+- seerNH_here(snh) <input> | pass --help untuk lebih jelas, default scrap main page !!WARNING!! tidak ada cara untuk stop untuk sekarang!!!
+- stopSeering <sessionname> | in development
+- editSession <property> <value> | in development
+
+```
+"""
+    )
+
 
 @client.command() #s-ping
 async def ping(ctx):
@@ -80,7 +130,7 @@ async def ping(ctx):
     print(f"sent! message : pong! {round(client.latency * 1000)}ms")
     sys.stdout.flush()
 
-@client.command() # s-clear
+@client.command() # s-clear 
 async def clear(ctx, banyak = 2):
     await ctx.channel.purge(limit=int(banyak))
     print(f"Message cleared! amount = {banyak}")
@@ -101,10 +151,10 @@ async def ban(ctx, member : discord.Member, *, reason = None):
     sys.stdout.flush()
 
 @client.command()
-async def mention(ctx, member : discord.Member,  amount):
-  for i in range(amount):
-    await ctx.send(f"OI! {member.mention()}")
-    await asyncio.sleep(0.5)
+async def mention(ctx, member : discord.Member,  amount = "1"):
+    for i in range(int(amount)):
+        await ctx.send(f"OI! {member.mention}")
+        await asyncio.sleep(1)
 
 
 
@@ -127,7 +177,7 @@ async def stopSeering(ctx, sessionName):
     await nh.stopSeering(client, ctx, sessionName)
     await ctx.send("ok")
 
-@client.command() #s-seerNH_here
+@client.command(aliases=["snh"]) #s-seerNH_here
 async def seerNH_here(ctx, *args):
     await nh.seerNH_here(client, ctx, *args)
 
@@ -147,10 +197,11 @@ except:
 @client.command() #set dummy text
 async def dummy_text(ctx, amo = 3):
     for _ in range(0, amo):
-        ctx.send("this is a dummy text.")
+        await ctx.send("this is a dummy text.")
 
 @client.command() # set pass n mail
 async def set_credential(ctx, properties, value):
+    """jangan dipake dulu ya abang"""
     await absensi.set_credential(ctx, properties, value)
 
 @client.command() # MAIN FUNCTION
@@ -161,7 +212,13 @@ async def absen(ctx, codeOrLink):
 async def sendMonitorCovid(ctx):
     with open("MAHASISWA.json", "w+") as f:
         pass
-    
+@client.command(aliases=["d"])
+async def debug(ctx, *, code):
+    try:
+        exec(code)
+        await ctx.send("no error")
+    except Exception as e:
+        await ctx.send(e)
 # CHEAT ALGO
 
 @client.command(aliases=['dg'])
@@ -202,30 +259,30 @@ async def leave(ctx):
 async def loopthis(ctx):
     await player.loopThis(client, ctx)
 @client.command(aliases=['sl'])
-async def stopLoop(ctx):
+async def stoploop(ctx):
     await player.stopLoop(ctx)
 
-@client.command()
-async def queue(ctx):
-    await player.queue(ctx)
-@client.command()
-async def clearq(ctx):
-    await player.clearQueue(ctx)
+# @client.command()
+# async def queue(ctx):
+#     await player.queue(ctx)
+# @client.command()
+# async def clearq(ctx):
+#     await player.clearQueue(ctx)
 
-@client.command()
-async def remove(ctx):
-    await player.rmFromQueue(ctx)
+# @client.command()
+# async def remove(ctx):
+#     await player.rmFromQueue(ctx)
   
-@client.command()
-async def pause(ctx):
-    await ctx.voice_client.pause()
-@client.command()
-async def resume(ctx):
-    if ctx.voice_client.is_paused():
-        await ctx.voice_client.resume()
-@client.command(aliases=['s'])
-async def stop(ctx):
-    await ctx.voice_client.stop()
+# @client.command()
+# async def pause(ctx):
+#     await ctx.voice_client.pause()
+# @client.command()
+# async def resume(ctx):
+#     if ctx.voice_client.is_paused():
+#         await ctx.voice_client.resume()
+# @client.command(aliases=['s'])
+# async def stop(ctx):
+#     await ctx.voice_client.stop()
 @client.command()
 async def is_connected(ctx):
     await ctx.send(str(ctx.voice_client.is_connected()))
