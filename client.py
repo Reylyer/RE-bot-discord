@@ -20,15 +20,15 @@ client = commands.Bot(command_prefix=f"{PREFIX}-")
 
 
 class Server():
-  def __init__(self, id):
-    self.id = id
-    
-  nhSession = []
-  savedCodes = []
+    def __init__(self, id):
+        self.id = id
+      
+    nhSession = []
+    savedCodes = []
   
 try:
-  f = open("servers.json")
-  f.close()
+    f = open("servers.json")
+    f.close()
 except:
   with open("servers.json", "w") as f:
     f.write(json.dumps([]))
@@ -59,6 +59,7 @@ except:
 async def on_ready():
     print("its ready!! let the message in!")
     sys.stdout.flush()
+    # await nh.continyu()
 
 @client.event # saat ada member yang masuk
 async def on_join(member):
@@ -136,51 +137,56 @@ async def seerNH_here(ctx, *args):
 
 
 try:
-  f = open("MAHASISWA.json")
-  f.close()
-except:
-  with open("MAHASISWA.json", "w") as f:
-    f.write(json.dumps([]))
+    f = open("MAHASISWA.json")
     f.close()
+except:
+    with open("MAHASISWA.json", "w") as f:
+        f.write(json.dumps([]))
+        f.close()
 
 @client.command() #set dummy text
 async def dummy_text(ctx, amo = 3):
-  for _ in range(0, amo):
-    ctx.send("this is a dummy text.")
+    for _ in range(0, amo):
+        ctx.send("this is a dummy text.")
 
 @client.command() # set pass n mail
 async def set_credential(ctx, properties, value):
-  await absensi.set_credential(ctx, properties, value)
+    await absensi.set_credential(ctx, properties, value)
 
 @client.command() # MAIN FUNCTION
 async def absen(ctx, codeOrLink):
-  await absensi.absen(ctx, codeOrLink)
+    await absensi.absen(ctx, codeOrLink)
     
 @client.command()
 async def sendMonitorCovid(ctx):
-  with open("MAHASISWA.json", "w+") as f:
-    pass
-  
+    with open("MAHASISWA.json", "w+") as f:
+        pass
+    
+# CHEAT ALGO
+
+@client.command(aliases=['dg'])
+async def djikstra(ctx, space,   *, arg):
+    await cheatxxx.djikstraGenerator(client, ctx, arg)
 
 # all about voice channel
-@client.command()
+@client.command(aliases=['p'])
 async def play(ctx, *arg):
-  await player.play(client, ctx, *arg)
-  if 'allah' in ctx.message.content:
-    await ctx.send('mashallah brother, keep up your iman')
+    await player.play(client, ctx, *arg)
+    if 'allah' in ctx.message.content:
+        await ctx.send('mashallah brother, keep up your iman')
 
-@client.command()
+@client.command(aliases=['pr'])
 async def playrandom(ctx):
-  await ctx.send("played random song!\nTebak lagu apa!")
-  await player.playRandom(client, ctx)
+    await ctx.send("played random song!\nTebak lagu apa!")
+    await player.playRandom(client, ctx)
 
 @client.command(aliases=['q'])
 async def quiz(ctx, timer = "30"):
-  await player.quiz(client, ctx, timer)
+    await player.quiz(client, ctx, timer)
 
 @client.command(aliases=['sq'])
 async def stopquiz(ctx):
-  await player.stopquiz(ctx)
+    await player.stopquiz(ctx)
 
 @client.command()
 async def join(ctx):
@@ -188,70 +194,56 @@ async def join(ctx):
     await channel.connect()
 @client.command()
 async def leave(ctx):
-  user=ctx.message.author
-  voice_channel=user.voice.channel
-  voice_clients = client.voice_clients
-  for voi in voice_clients:
-    if voi.channel == voice_channel:
-      voice_client = voi
-      break
-  else:
-    await ctx.send("kamu atau aku engga di voice channel \:(")
-    return
-  voice_client.stop()
-  await voice_client.disconnect()
-  await player.clearQueue(ctx)
+    channel = ctx.message.author.voice.channel
+    voice_client = discord.utils.get(client.voice_clients, guild=ctx.guild) 
+    voice_client.stop()
+    await voice_client.disconnect()
 @client.command(aliases=['lt'])
 async def loopthis(ctx):
-  await player.loopThis(client, ctx)
+    await player.loopThis(client, ctx)
 @client.command(aliases=['sl'])
 async def stopLoop(ctx):
-  await player.stopLoop(ctx)
+    await player.stopLoop(ctx)
 
 @client.command()
 async def queue(ctx):
-  await player.queue(ctx)
+    await player.queue(ctx)
 @client.command()
 async def clearq(ctx):
-  await player.clearQueue(ctx)
+    await player.clearQueue(ctx)
 
 @client.command()
 async def remove(ctx):
-  await player.rmFromQueue(ctx)
+    await player.rmFromQueue(ctx)
   
 @client.command()
 async def pause(ctx):
-  await ctx.voice_client.pause()
+    await ctx.voice_client.pause()
 @client.command()
 async def resume(ctx):
-  if ctx.voice_client.is_paused():
-    await ctx.voice_client.resume()
+    if ctx.voice_client.is_paused():
+        await ctx.voice_client.resume()
 @client.command(aliases=['s'])
 async def stop(ctx):
-  await ctx.voice_client.stop()
+    await ctx.voice_client.stop()
 @client.command()
 async def is_connected(ctx):
-  await ctx.send(str(ctx.voice_client.is_connected()))
+    await ctx.send(str(ctx.voice_client.is_connected()))
 @client.command()
 async def is_playing(ctx):
-  await ctx.send(str(ctx.voice_client.is_playing()))
+    await ctx.send(str(ctx.voice_client.is_playing()))
 @client.command()
 async def is_paused(ctx):
-  await ctx.send(str(ctx.voice_client.is_paused()))
+    await ctx.send(str(ctx.voice_client.is_paused()))
 
 @client.command()
 async def voice_status(ctx):
-  await player.voice_status(ctx, client)
+    await player.voice_status(ctx, client)
 
 
 @client.command() # set pass n mail
 async def ip(ctx):
-  await ctx.send("20.85.244.255")
-
-
-
-
-
+    await ctx.send("52.190.16.247")
 
 
 
@@ -261,6 +253,8 @@ print(TOKEN)
 sys.stdout.flush()        
 
 client.run(TOKEN)
+
+
 
 # client.run("drop your discord bot token here")
 
