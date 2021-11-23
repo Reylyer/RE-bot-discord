@@ -1,4 +1,6 @@
+from __future__ import annotations
 import discord
+
 
 class Vertex:
     def __init__(self, name) -> None:
@@ -125,18 +127,130 @@ baris terakhir : dari vertex apa ke vertex apa
         f.close()
         attachment = discord.File("djiksTemp.bat")
         await ctx.send("enjoy~", file=attachment)
-#         await ctx.send(
-# """untuk merapihkan ini ganti setiap `'    '` dengan `\\t`  
-# one line python code:
-# ```py
-# print('''paste here'''.replace("\t", "\\t"))
-# ```
-# atau lihat dari attachment langsung
-# enjoy~
 
-# """, file=attachment
-#         )
 
     except Exception as e:
         await ctx.send(e)
+
+class Graph2:
+    def __init__(self, vert):
+        self.v = vert
+        self.edges = []
+        self.track = []
+        self.visitedvert = []
+        self.matrix = []
+
+        self.vertices = []
+        self.hashMap = {}
+
+        '''
+        self.matrix
+        [
+            [["a", "b", w1], ["a", "c", w2]],
+            .
+            .
+            .
+            [["n", "a", w1], ["n", "b", w2]]
+        ]
+
+        self.vertices
+        [
+            Vertex_Object1,
+            Vertex_Object2,
+            Vertex_Object3
+        ]
         
+        self.adjency_matrix
+        [
+            [0, 2, 3, 0],
+            [2, 0, 3, 1],
+            [2, 1, 0, 3],
+            [1, 3, 0, 0]
+        ]
+        '''
+    
+    def add_edge(self, u, v, weight):
+        # print([a.__dict__ for a in self.vertices])
+        sVert = [a for a in self.vertices if a.name == u] # WWKWKKWKW PADET ANJING
+        if sVert:
+            start = sVert[0]
+        else:
+            start = Vertex(u)
+            self.vertices.append(start)
+        eVert = [a for a in self.vertices if a.name == v]
+        if eVert:
+            end = eVert[0]
+        else:
+            end = Vertex(v)
+            self.vertices.append(end)
+        nEdge = Edge(start, end, weight)
+        mEdge = Edge(end, start, weight)
+        self.edges.append(nEdge)
+        self.edges.append(mEdge)
+        start.edges.append(nEdge)
+        end.edges.append(mEdge)
+
+    
+    def make_hashMap(self):
+        self.hashMap = {}
+        for a in self.vertices:
+            self.hashMap[a.name] = a
+
+    def make_adjency_matrix(self):
+        self.make_hashMap()
+        self.adjency_matrix = [[0 for _ in range(self.v)] for _ in range(self.v)]
+        # print(self.adjency_matrix)
+
+        for edge in self.edges:
+            self.adjency_matrix[ord(edge.start.name) - 65][ord(edge.end.name) - 65] = edge.weight
+
+    def make_matrix(self):
+        awalList = sorted(set([a.start.name for a in self.edges]))
+        for awal in awalList:
+            self.matrix.append([[i.start.name, i.end.name, i.weight] for i in self.edges if i.start.name == awal])
+    
+    def append_edge(self, u, v, weight):
+        if not self.matrix:
+            for a in self.matrix: # [["awal", "akhir", berat], ["awal", "akhir", berat]]
+                if len(a[0]) != 0:
+                    if a[0][0] == u:
+                        a.append([u, v, weight])
+                        break
+        else:
+            self.matrix.append([[u, v, weight]])
+
+def cyclePurger(edgesList: list[Edge], visitedVertices: list[Vertex]) -> list[Edge]:
+    for i, edge in enumerate(edgesList):
+        if edge.start in visitedVertices and edge.end in visitedVertices:
+            del edgesList[i]
+    return edgesList
+        
+def primPlusPlus(grap: Graph):
+    
+    edgesCopy = grap.edges.copy()
+    visitedVert = []
+    # ambil edges dengan bobot paling kecil
+    edgesCopy.sort(key= lambda x: x.weight)
+    edgesCopy = edgesCopy[::2]
+    # print([b.__dict__ for b in edgesCopy])
+
+    cheapEdge = edgesCopy[0]
+    tots = cheapEdge.weight
+    visitedVert = list(dict.fromkeys(visitedVert + [cheapEdge.start] + [cheapEdge.end]))
+    del edgesCopy[0]
+    print(cheapEdge.start.name, cheapEdge.end.name, cheapEdge.weight)
+    
+    while len(edgesCopy) > 1:
+        validEdges = [a for a in edgesCopy if a.start in visitedVert or a.end in visitedVert]
+        cheapEdge = validEdges[0]
+        tots += cheapEdge.weight
+        visitedVert = list(dict.fromkeys(visitedVert + [cheapEdge.start] + [cheapEdge.end]))
+        print(cheapEdge.start.name, cheapEdge.end.name, cheapEdge.weight)
+
+        del edgesCopy[edgesCopy.index(cheapEdge)]
+        edgesCopy = cyclePurger(edgesCopy, visitedVert)
+    print(f"Harga total untuk MST adalah {tots}")
+
+async def primGen(ctx, input):
+    
+    pass

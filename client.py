@@ -1,10 +1,17 @@
 from __future__ import unicode_literals, annotations
 from types import SimpleNamespace
+from concurrent.futures import ProcessPoolExecutor
 #%%
 import discord, asyncio
 import json
 import os, sys
-from env import *
+import env.absensi as absensi
+import env.cheatxxx as cheatxxx
+import env.nh as nh
+import env.piping as piping
+import env.player as player
+import tweepy
+import importlib
 
 #import time
 from discord.ext import commands
@@ -19,47 +26,20 @@ PREFIX = os.getenv('PREFIX')
 client = commands.Bot(command_prefix=f"{PREFIX}-")
 
 
-class Server():
-    def __init__(self, id):
-        self.id = id
-    
-    nhSession = []
-    savedCodes = []
+consumer_key=os.getenv('consumer_key')
+consumer_secret=os.getenv('consumer_secret')
+access_token = os.getenv('access_token')
+access_token_secret = os.getenv('access_token_secret')
+auth = tweepy.AppAuthHandler(consumer_key, consumer_secret)
+api = tweepy.API(auth)
 
-try:
-    f = open("servers.json")
-    f.close()
-except:
-    with open("servers.json", "w") as f:
-        f.write(json.dumps([]))
-        f.close()
-    
-# @client.event
-# async def on_message(message):
-#   with open("servers.json", "r+") as f:
-#     content = f.read()
-#     try:
-#       servers = json.loads(content, object_hook= lambda o: SimpleNamespace(**o))
-#     except Exception as e:
-#       await message.reply(e)
-#     for server in servers:
-#       if server.id is message.guild.id:
-#         pass
-#     else:
-#       newClass = Server(message.guild.id)
-#       servers.append(newClass)
-#       f.seek(0)
-#       f.write(servers)
-#       f.truncate()
-#     f.close()
-    
 
 # event
 @client.event # bot online (saat .py ini dijalankan)
 async def on_ready():
     print("its ready!! let the message in!")
     sys.stdout.flush()
-    # await nh.continyu()
+    tasks = await nh.continyu(client)
 
 @client.event # saat ada member yang masuk
 async def on_join(member):
@@ -156,6 +136,29 @@ async def mention(ctx, member : discord.Member,  amount = "1"):
         await ctx.send(f"OI! {member.mention}")
         await asyncio.sleep(1)
 
+@client.command()
+async def whoami(ctx):
+    await ctx.send(ctx.author.id)
+
+@client.command(aliases=["dh"])
+async def dumpHere(ctx):
+    await ctx.send("setted as dumpster channel, please wait for the messages to be dumped")
+    task = asyncio.create_task(piping.dumping(ctx))
+    # task = loop.run_in_executor(executor, dump)
+    # loop = asyncio.get_event_loop()
+    # loop.run_forever()
+
+@client.command()
+async def cariJoki(ctx, *filterWords):
+    try:
+        stream = piping.testStream(consumer_key, consumer_secret, access_token, access_token_secret, ctx.channel, max_retries=10)
+        stream.filter( follow=["1341567351301361665", "1330354354780577792"])
+        # asyncio.create_task(stream.filter(filterWords))
+        # thread = stream.filter(track=filterWords, threaded=True)
+    except Exception as e:
+        await ctx.send(e)
+
+
 
 
 #---------------------------------------------------------
@@ -214,16 +217,32 @@ async def sendMonitorCovid(ctx):
         pass
 @client.command(aliases=["d"])
 async def debug(ctx, *, code):
-    try:
-        exec(code)
-        await ctx.send("no error")
-    except Exception as e:
-        await ctx.send(e)
+    if str(ctx.author.id) == "719757341787947060":
+        try:
+            exec(code)
+            await ctx.send("no error")
+        except Exception as e:
+            await ctx.send(e)
+    else:
+        await ctx.send("You dont have the permission to debug!")
+
+
+
 # CHEAT ALGO
 
 @client.command(aliases=['dg'])
 async def djikstra(ctx, util,   *, arg = ""):
+    importlib.reload(cheatxxx)
     await cheatxxx.djikstraGenerator(client, ctx, util, arg)
+
+@client.command(aliases=['pg'])
+async def prim(ctx, util,   *, arg = ""):
+    importlib.reload(cheatxxx)
+    await cheatxxx.primGen(client, ctx, util, arg)
+
+
+
+
 
 # all about voice channel
 @client.command(aliases=['p'])
@@ -265,6 +284,7 @@ async def stoploop(ctx):
 async def show_cached(ctx):
     await player.show_cached(ctx)
 
+
 # @client.command()
 # async def queue(ctx):
 #     await player.queue(ctx)
@@ -275,17 +295,16 @@ async def show_cached(ctx):
 # @client.command()
 # async def remove(ctx):
 #     await player.rmFromQueue(ctx)
-  
-# @client.command()
-# async def pause(ctx):
-#     await ctx.voice_client.pause()
-# @client.command()
-# async def resume(ctx):
-#     if ctx.voice_client.is_paused():
-#         await ctx.voice_client.resume()
-# @client.command(aliases=['s'])
-# async def stop(ctx):
-#     await ctx.voice_client.stop()
+@client.command()
+async def pause(ctx):
+    await ctx.voice_client.pause()
+@client.command()
+async def resume(ctx):
+    if ctx.voice_client.is_paused():
+        await ctx.voice_client.resume()
+@client.command(aliases=['s'])
+async def stop(ctx):
+    await ctx.voice_client.stop()
 @client.command()
 async def is_connected(ctx):
     await ctx.send(str(ctx.voice_client.is_connected()))

@@ -1,9 +1,9 @@
 from __future__ import annotations
-import discord, os, sys
+import discord, os, sys, requests
 from types import SimpleNamespace
-import json
+import json, re
 from pyppeteer import launch
-import asyncio
+import asyncio, threading
 
 class StoredCodes:
     def __init__(self, tag, freq, codes):
@@ -29,6 +29,111 @@ try:
 except:
     pass
 
+import requests
+
+def find_nth(haystack, needle, n):
+    start = haystack.find(needle)
+    while start >= 0 and n > 1:
+        start = haystack.find(needle, start+len(needle))
+        n -= 1
+    return start
+def intagRecovery(stringss):
+    inTags = []
+    instreak = False
+    for char in stringss:
+        if char == ">":
+            temp = ""
+            instreak = True
+        elif char == "<" and instreak:
+            if temp == "":
+                continue
+            inTags.append(temp)
+            temp = ""
+            instreak = False
+        elif instreak:
+            temp += char
+    return inTags
+
+def scrapFromCode(code: str) -> dict:
+    """
+    Parameter
+    ----------
+    `code`: string
+        a string of code that represents the art
+        biasa disebut `kode nuklir` terdiri dari
+        5 atau 6 digit, biasa terletak di address atau 
+        cover
+        `https://nhentai.net/g/******`
+    
+    Return
+    ------
+    `info` : dictionary
+        dictionary untuk kode yang diberikan
+
+        key value pair:
+        code       : string 
+        altcode    : string
+        thumbnail  : string
+        title_en   : string
+        title_jp   : string
+        parodies   : list[string]
+        characters : dict
+        tags       : dict
+        artists    : dict
+        groups     : dict
+        languages : dict
+        categories : dict
+        Pages      : integer
+    """
+    htmlkotor = requests.get(f"https://nhentai.net/g/{code}").text
+    infoSection = htmlkotor.split("\n")
+    # print("\n\n".join(infoSection))
+    # print(len(infoSection))
+    # print(code)
+
+    title1 = htmlkotor[infoSection[4].find("""<span class="pretty">""") + 25:infoSection[4].find("""</span><span class="after">""") + 4]
+    title2 = htmlkotor[find_nth(infoSection[4], """<span class="pretty">""", 2) + 25:find_nth(infoSection[4], """</span><span class="after">""", 2)]
+    
+
+
+    altcodeIndex = infoSection[4].find("""https://t.nhentai.net/galleries/""") + 36
+    altCode = htmlkotor[altcodeIndex: altcodeIndex + 7]
+    if not altCode.isnumeric:
+        altCode = altCode[:-1]
+    thumbnail = htmlkotor[altcodeIndex - 32: altcodeIndex + 17]
+    # print(thumbnail)
+    parodiesSection = infoSection[6]
+    characterSection = infoSection[8]
+    tagsSection = infoSection[10]
+    artistSection = infoSection[12]
+    groupsSection = infoSection[14]
+    languagesSection = infoSection[16]
+    categoriesSection = infoSection[18]
+    pagesSection = infoSection[20]
+
+    result = {}
+    result["code"] = code
+    result["altcode"] = altCode
+    result["thumbnail"] = thumbnail
+    result["title1"] = title1
+    result["title2"] = "" if len(title2) > 200 else title2
+    result["parodies"] = {key: val for key in intagRecovery(parodiesSection)[::2] for val in intagRecovery(parodiesSection)[1::2]}
+    result["characters"] = {key: val for key in intagRecovery(characterSection)[::2] for val in intagRecovery(characterSection)[1::2]}
+    result["tags"] = {key: val for key in intagRecovery(tagsSection)[::2] for val in intagRecovery(tagsSection)[1::2]}
+    result["artists"] = {key: val for key in intagRecovery(artistSection)[::2] for val in intagRecovery(artistSection)[1::2]}
+    result["groups"] = {key: val for key in intagRecovery(groupsSection)[::2] for val in intagRecovery(groupsSection)[1::2]}
+    result["languages"] = {key: val for key in intagRecovery(languagesSection)[::2] for val in intagRecovery(languagesSection)[1::2]}
+    result["categories"] = {key: val for key in intagRecovery(categoriesSection)[::2] for val in intagRecovery(categoriesSection)[1::2]}
+    result["pages"] = intagRecovery(pagesSection)[0]
+
+    return result
+
+def getCodes(tag = "main", freq = ""):
+    link = "https://nhentai.net"
+    link += "" if tag == "main" else f"/tag/{tag}/{freq}"
+    htmlkotor = requests.get(link).text
+    gIndex = [m.start() for m in re.finditer('/g/', htmlkotor)]
+    return [htmlkotor[i + 3: i + 9] for i in gIndex]
 
 async def stopSeering(client, ctx, sessionName):
     """ this function will stop a session given by its sessionName
@@ -50,11 +155,6 @@ async def stopSeering(client, ctx, sessionName):
         f.write(nhSessions)
         f.truncate()
         f.close()
-
-
-# check if exist session with $sessionName
-
-# else show all session within the channel invoked
 
 async def seerNH_here(client, ctx, *args):
     """ mengaktifkan nhSession 
@@ -171,11 +271,6 @@ async def NHPLoop(channel, args, sessionName): # get 5 codes of popular art on m
     print(f"amount = {amount}")
     sys.stdout.flush()
     
-    # # session name
-    # # valib input no spaces
-    # sessionNameList = [arg for arg in args if "--sessionName=" in arg]
-    # if len(sessionNameList) is 1:
-    #   sessionName = sessionNameList[0][sessionNameList[0].index("=") + 1:]
     if sessionName == "":
         sessionName = f"{channel.name}_{tag}_{freq}_{amount}"
     print(f"session name = {sessionName}")
@@ -225,83 +320,38 @@ async def NHPLoop(channel, args, sessionName): # get 5 codes of popular art on m
 
     nhSessionRunning = True
 
-    subjectLink = "https://nhentai.net"
-    if tag is not "main":
-        subjectLink +=  f"/tag/{tag}/{freq}"
-    
     while nhSessionRunning:
 
-        await mainScrap(channel)
+        await mainScrap(channel, sessionName)
 
+async def kickstart(channel, sessionName):
+    nhSessions = json.loads(open(f"./servers/{str(channel.guild.id)}/nhSessions.json", "r").read())
+    try:
+        for nhSession in nhSessions:
+            print(f"{nhSession['sessionName']} == {sessionName}")
+            sys.stdout.flush()
+            if nhSession['sessionName'] == sessionName:
+                subjectNhSession = nhSession
+                break
+    except:
+        pass
+    while subjectNhSession["running"]:
+        await mainScrap(channel, sessionName)
+        nhSessions = json.loads(open(f"./servers/{str(channel.guild.id)}/nhSessions.json", "r").read())
+        try:
+            for nhSession in nhSessions:
+                print(f"{nhSession['sessionName']} == {sessionName}")
+                sys.stdout.flush()
+                if nhSession['sessionName'] == sessionName:
+                    subjectNhSession = nhSession
+                    break
+        except:
+            pass
 
-# this is the scrap function 
-async def nhScraper(subjectLink: str, additionalSelector: str, amount: int) -> list[list[str], list[str]]:
-    """this is the scrap function """
-    browser = await launch(ignoreHTTPSErrors = True, headless = True, args=["--no-sandbox"])
-    page = await browser.newPage()
-    await page.goto(subjectLink)
-
-    # ambil tag div popular
-    subjectDiv = await page.querySelector(f".container.index-container{additionalSelector}")
-
-    # buat list yang isinya anchor dari karya popular
-    subjectAnchor = await subjectDiv.querySelectorAll(".cover")
-    codes = []
-    #thumbnails = []
-    captions = []
-    if amount > len(subjectAnchor):
-        amount = len(subjectAnchor)
-    # olah setiap anchor untuk di ekstrak kode dan thumbnailnya
-    for i in range(0, amount):
-        code = await page.evaluate('(ele) => ele.getAttribute("href")', subjectAnchor[i])
-        code = code[3:-1]
-
-        #thumbnailURL = await page.evaluate('(ele) => ele.querySelector("img").getAttribute("src")', subjectAnchor[i])
-        caption = await page.evaluate('(ele) => ele.querySelector("div").innerText', subjectAnchor[i])
-
-        #print(thumbnailURL)
-        print(code)
-        sys.stdout.flush()
-        codes.append(code)
-        #thumbnails.append(thumbnailURL)
-        captions.append(caption)
-        
-    await browser.close()
-    return [codes, captions]
-
-
-async def getTagsAndSpecialCodeAndPagesFromCode(code: str = "177013") -> list[list[str], str, str]:
-    """return tags, thumbail url and pages count given code """
-    browser = await launch(ignoreHTTPSErrors = True, headless = True, args=["--no-sandbox"])
-    page = await browser.newPage()
-    await page.goto(f"https://nhentai.net/g/{code}/")
-    spanTag = await page.querySelectorAll("span.tags")
-    spanTag = spanTag[2]
-    anchorTags = await spanTag.querySelectorAll("a")
-    tags = []
-    for a in anchorTags:
-        tag = await page.evaluate('(ele) => ele.querySelector("span.name").innerText', a)
-        tags.append(tag)
-    imgThumbnail = await page.querySelector(".lazyload")
-    thumbnailURL = await page.evaluate("""(ele) => ele.getAttribute("data-src")""", imgThumbnail)
-    anchorPages = await page.querySelectorAll("a.tag")
-    anchorPages = anchorPages[-1]
-    pages =  await page.evaluate(""" (ele) => ele.querySelector("span.name").innerText """, anchorPages)
-    # https://t.nhentai.net/galleries/2012274/cover.jpg
-    await page.close()
-    await browser.close()
-    return [tags, thumbnailURL[32:39], pages]
-
-async def bacaHaram(ctx, code):
-    [_, specialCode, pages] = await getTagsAndSpecialCodeAndPagesFromCode(code)
-    for i in range(int(pages)):
-        await ctx.send(f"https://i.nhentai.net/galleries/{specialCode}/{i + 1}.jpg")
-
-
-async def mainScrap(channel):
+async def mainScrap(channel, sessionName):
     f = open(f"servers/{channel.guild.id}/nhSessions.json", "r+")
     content = f.read()
-    print(f"content = {content}")
+    # print(f"content = {content}")
     sys.stdout.flush()
     nhSessions = json.loads(content, object_hook= lambda o: SimpleNamespace(**o))
 
@@ -317,55 +367,45 @@ async def mainScrap(channel):
         pass
 
     try:
-        [codes, captions] = await nhScraper(subjectLink, additionalSelector, amount)
+        codes = getCodes(subjectNhSession.tag, subjectNhSession.freq)
     except Exception as e:
         await channel.send(f"some error has occurred\nError message:{e}")
-        return
-    
 
-    if len(subjectNhSession.lastCodes) == 0: # first time run on certain tag and freq
-        for i in range(0, len(codes)):
-            # https://stackoverflow.com/questions/64527464/clickable-link-inside-message-discord-py
-            [tags, specialCode, pages] = await getTagsAndSpecialCodeAndPagesFromCode(codes[i])
-            embed = discord.Embed()
-            thumbnail = f"https://t.nhentai.net/galleries/{specialCode}/cover.jpg"
-            try:
-                embed.set_image(url=thumbnail)
-            except:
-                pass
-            embed.description = f"{captions[i]}\n\nTags: •{' •'.join(tags)}\nPages: {pages}\n\n[#{codes[i]}](https://nhentai.net/g/{codes[i]})."
+    for code in codes[:subjectNhSession.amount]:
+        if code in subjectNhSession.savedCodes:
+            continue
+        subjectNhSession.savedCodes.append(code)
+        info = scrapFromCode(code)
+        embed = discord.Embed()
+        thumbnail = info["thumbnail"]
+        try:
+            embed.set_image(url=thumbnail)
+        except Exception as e:
+            await channel.send(e)
+        try:
+            embed.description = f"""
+Title: {info['title1']}
+Alternative title: {info['title2']}
+Code : {info['code']}
+Alternative code : {info['altcode']}
+Parodies : •{' •'.join(list(info['parodies'].keys()))}
+Characters : •{' •'.join(list(info['characters'].keys()))}
+Tags: •{' •'.join(list(info['tags'].keys()))}
+Artists: •{' •'.join(list(info['artists'].keys()))}
+Groups: •{' •'.join(list(info['groups'].keys()))}
+Languages: •{' •'.join(list(info['languages'].keys()))}
+Categories: •{' •'.join(list(info['categories'].keys()))}
+Pages: {info['pages']}
+
+[#{code}](https://nhentai.net/g/{code}) :point_left: 
+enjoy ~
+"""     
             await channel.send(embed=embed)
-        subjectNhSession.lastCodes = codes
-        subjectNhSession.savedCodes = codes
-
-    else: # in loop
-        adaBeda = False
-        codeBeda = []
-        for i in range(0, len(codes)):
-            if codes[i] in subjectNhSession.lastCodes:
-                pass
-            else:
-                codeBeda.append(codes[i])
-                adaBeda = True
-                [tags, specialCode, pages] = await getTagsAndSpecialCodeAndPagesFromCode(codes[i])
-                embed = discord.Embed()
-                thumbnail = f"https://t.nhentai.net/galleries/{specialCode}/cover.jpg"
-                try:
-                        embed.set_image(url=thumbnail)
-                except:
-                        pass
-                embed.description = f"{captions[i]}\n\nTags: •{' •'.join(tags)}\nPages: {pages}\n\n[#{codes[i]}](https://nhentai.net/g/{codes[i]})."
-                await channel.send(embed=embed)
-        if not adaBeda:
-            print("nope")
-            sys.stdout.flush()
-                # await channel.send("no new art in popular(main page)")
-        else:
-            for newCode in codeBeda:
-                subjectNhSession.savedCodes.append(newCode)
-            subjectNhSession.lastCodes = codes
+        except:
+            await channel.send(f"sepertinya kepanjangan, length description = {len(embed.description)}, max is 6000")
+            print(embed.description)
     nhSessions = json.dumps([nhSession.__dict__ for nhSession in nhSessions], indent=4)
-    print(nhSessions)
+    # print(nhSessions)
     sys.stdout.flush()
     f.seek(0)
     f.write(nhSessions)
@@ -373,5 +413,19 @@ async def mainScrap(channel):
     f.close()
     await asyncio.sleep(1200)
 
-# async def continyu():
-#     asyncio.run()
+async def continyu(client):
+
+    serverDirs = os.listdir("./servers")
+    tasks = []
+    loop = asyncio.get_event_loop()
+    for server in serverDirs:
+        nhSessions = json.loads(open(f"./servers/{server}/nhSessions.json").read())
+        for nhsession in nhSessions:
+            if nhsession["running"]:
+                channel = discord.utils.get(client.get_all_channels(), name=nhsession["channel"])
+                asyncio.ensure_future(kickstart(channel, nhsession["sessionName"]))
+        await asyncio.sleep(60)
+
+    return tasks
+
+
