@@ -418,13 +418,13 @@ async def continyu(client):
     serverDirs = os.listdir("./servers")
     tasks = []
     loop = asyncio.get_event_loop()
+    await asyncio.sleep(60)
     for server in serverDirs:
         nhSessions = json.loads(open(f"./servers/{server}/nhSessions.json").read())
         for nhsession in nhSessions:
             if nhsession["running"]:
                 channel = discord.utils.get(client.get_all_channels(), name=nhsession["channel"])
                 asyncio.ensure_future(kickstart(channel, nhsession["sessionName"]))
-        await asyncio.sleep(60)
 
     return tasks
 
