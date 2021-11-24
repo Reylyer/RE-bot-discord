@@ -172,7 +172,7 @@ class Piper(commands.Cog):
     @commands.command()
     async def create_filter_stream(self, ctx, *, user_args = ''):
         user_args = self.translate(user_args.lower())
-        for arg in ['filter_has', 'filter_word', 'filter_exclude_has', 'filter_exclude_word', 'mention']:
+        for arg in ['filter_has', 'filter_word', 'filter_exclude_has', 'filter_exclude_word', 'mention', 'raw']:
             if arg not in user_args:
                 user_args[arg] = []
         if 'name' not in user_args:
@@ -188,7 +188,8 @@ class Piper(commands.Cog):
             filter_has          = user_args['filter_has'],
             filter_word         = user_args['filter_word'],
             filter_exclude_has  = user_args['filter_exclude_has'],
-            filter_exclude_word = user_args['filter_exclude_word']
+            filter_exclude_word = user_args['filter_exclude_word'],
+            raw                 = user_args['raw']
             )
     
     @commands.command()

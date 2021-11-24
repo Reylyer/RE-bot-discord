@@ -68,7 +68,7 @@ class DataStream(AsyncStream, object):
     async def on_data(self, raw_data):
         try:
             data = json.loads(raw_data.decode("utf-8"))
-            if data["in_reply_to_screen_name"] == None:
+            if data["in_reply_to_screen_name"] == None and "retweeted_status" not in data:
                 print(self.subscriber)
                 # print(data)
                 self.newest_tweet = data
@@ -77,7 +77,7 @@ class DataStream(AsyncStream, object):
 
 
 class FilterStream(object):
-    def __init__(self, name, stream: DataStream, channel, mentionids = [], filter_has = [], filter_word = [], filter_exclude_has = [], filter_exclude_word = []):
+    def __init__(self, name, stream: DataStream, channel, mentionids = [], filter_has = [], filter_word = [], filter_exclude_has = [], filter_exclude_word = [], raw = False):
 
         self.name = name
         self.channel = channel
@@ -89,7 +89,8 @@ class FilterStream(object):
         self.filter_exclude_word = filter_exclude_word
 
         self.stream.subscribe(self.name, self.process_tweet)
-
+        
+        self.raw = False if raw == [] else True
         print("ok")
         asyncio.create_task(self.channel.send(
 f"""successfully creating filter stream
@@ -115,6 +116,12 @@ stop using s-stop_filter_stream {self.name}
         text = tweet["extended_tweet"]["full_text"] if "extended_tweet" in tweet else tweet["text"]
         embed = discord.Embed(color = discord.Color.from_rgb(29, 161, 242))
         
+        if self.raw:
+            f = open("data_raw.json", "w");
+            f.write(json.dumps(tweet, indent=4))
+            f.close()
+            attachment = discord.File("data_raw.json")
+            asyncio.create_task(self.channel.send(file = attachment))
         # filter has
         # asyncio.create_task(self.channel.send(f"triggered, filter_has check: {bool(self.filter_has)}"))
         if self.filter_has:
@@ -156,11 +163,13 @@ stop using s-stop_filter_stream {self.name}
 
         embed.set_author(name=tweet['user']['name'], url=f"https://twitter.com/{tweet['user']['screen_name']}", icon_url=tweet['user']['profile_image_url_https'])
         embed.description = text + link
-        if 'media' in tweet['entities']:
-            try:
-                embed.set_thumbnail(url=tweet['entities']['media'])
-            except Exception as e:
-                asyncio.create_task(self.channel.send(f"error while setting thumbnail\nerror message : {e}"))
+        
+        try:
+            if 'media' in tweet['extended_entities']:
+                embed.set_thumbnail(url=tweet['extended_entities']['media'][0]['media_url'])
+        except Exception as e:
+            pass
+            # asyncio.create_task(self.channel.send(e))
         asyncio.create_task(self.channel.send(" ".join(['<@&'+ id + '>' for id in self.mentionids]), embed = embed))
 
             # await self.channel.send(e)
