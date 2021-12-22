@@ -425,6 +425,7 @@ async def continyu(client):
             if nhsession["running"]:
                 channel = discord.utils.get(client.get_all_channels(), name=nhsession["channel"])
                 asyncio.ensure_future(kickstart(channel, nhsession["sessionName"]))
+                await asyncio.sleep(2)
 
     return tasks
 

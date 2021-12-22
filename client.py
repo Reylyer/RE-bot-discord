@@ -1,4 +1,5 @@
 from __future__ import unicode_literals, annotations
+from asyncio import streams
 from types import SimpleNamespace
 from concurrent.futures import ProcessPoolExecutor
 #%%
@@ -12,7 +13,7 @@ import env.cheatxxx as cheatxxx
 import env.nh as nh
 import env.piping as piping
 import env.player as player
-import tweepy
+import tweepy, wavelink
 import importlib
 import string
 
@@ -42,7 +43,7 @@ access_token_secret = os.getenv('access_token_secret')
 
 auth = tweepy.AppAuthHandler(consumer_key, consumer_secret)
 api = tweepy.API(auth)
-client = commands.Bot(command_prefix=f"{PREFIX}-")
+client = commands.Bot(command_prefix=f"sudo ")
 
 
 """========================DISCORD========================"""
@@ -127,7 +128,7 @@ class Piper(commands.Cog):
         self.streamingTasks = {}
 
         self.active_filters = {}
-        self.active_stream = None
+        self.active_streams = {}
 
     @commands.command(aliases=["dh"])
     async def dumpHere(self, ctx):
@@ -137,36 +138,65 @@ class Piper(commands.Cog):
         # loop = asyncio.get_event_loop()
         # loop.run_forever()
 
-    @commands.command(aliases=['pt'])
-    async def piper_terminal(self, ctx, *, sqlWord):
-        try:
-            structure = self.compilerPseudoSQL()
-            if type == 0:
-                filterWords = None
-            stream = piping.DataStream(consumer_key, consumer_secret, access_token, access_token_secret, ctx.channel, filterWords, max_retries=10)
-            await ctx.send(f"tracking tweet filtered by {filterWords}")
-            stream.filter(follow=["1341567351301361665", "1330354354780577792"])
-            # asyncio.create_task(stream.filter(filterWords))
-            # thread = stream.filter(track=filterWords, threaded=True)
-        except Exception as e:
-            await ctx.send(e)
+    # @commands.command(aliases=['pt'])
+    # async def piper_terminal(self, ctx, *, sqlWord):
+    #     try:
+    #         structure = self.compilerPseudoSQL()
+    #         if type == 0:
+    #             filterWords = None
+    #         stream = piping.DataStream(consumer_key, consumer_secret, access_token, access_token_secret, ctx.channel, filterWords, max_retries=10)
+    #         await ctx.send(f"tracking tweet filtered by {filterWords}")
+    #         stream.filter(follow=["1341567351301361665", "1330354354780577792"])
+    #         # asyncio.create_task(stream.filter(filterWords))
+    #         # thread = stream.filter(track=filterWords, threaded=True)
+    #     except Exception as e:
+    #         await ctx.send(e)
     
     @commands.command()
-    async def create_data_stream(self, ctx):
-        # args = self.translate(args)
-        # for key in args.keys():
-        #     if args[key] == 
+    async def create_data_stream(self, ctx, *, user_args = ''):
         try:
-            self.active_stream = piping.DataStream(consumer_key, consumer_secret, access_token, access_token_secret, max_retries=10)
-            self.active_stream.filter(follow=["1341567351301361665", "1330354354780577792"])
+            user_args = self.translate(user_args.lower())
+            if "follow" not in user_args:
+                user_args["follow"] = []
+            if "name" not in user_args:
+                user_args["name"] = str(random.randint(1000000, 9999999))
+            else:
+                user_args["name"] = user_args['name'][0]
+            print(user_args)
+            self.active_streams[user_args["name"]] =   piping.DataStream(consumer_key, 
+                                                                        consumer_secret, 
+                                                                        access_token, 
+                                                                        access_token_secret,
+                                                                        name=user_args["name"], 
+                                                                        max_retries=10)
+            self.active_streams[user_args["name"]].filter(follow=user_args['follow'])
             await ctx.send("success connecting to the stream")
-            await ctx.send("now filter using s-create_filter_stream")
+            await ctx.send(f"stop data stream using `sudo stop_data_stream {user_args['name']}`")
+            await ctx.send("now filter using sudo create_filter_stream")
+
         except Exception as e:
             await ctx.send(f"error while connecting to the stream\nerror message : {e}")
+    # 1464725836376985607
     
+    #TODO benerin clean kill
     @commands.command()
     async def stop_data_stream(self, ctx, name):
-        pass
+        if name in self.active_streams:
+            await ctx.send(f"Killing filter task associated with {name}...")
+            await asyncio.sleep(1)
+            for key, val in self.active_filters.items():
+                if val.stream == self.active_streams[name]:
+                    self.active_filters[key] = "unassigned"
+            self.active_streams[name].subscriber = {}
+            del self.active_streams[name]
+            await ctx.send(f"data_stream dengan nama {name} telah dihentikan, hopefully :<")
+        else:
+            await ctx.send(
+f"""data_stream dengan nama {name} tidak ditemukan
+data_stream aktif:
+```cmd
+{[name + " " for name in self.active_streams.keys()]}
+```""")
     
 
     @commands.command()
@@ -175,6 +205,27 @@ class Piper(commands.Cog):
         for arg in ['filter_has', 'filter_word', 'filter_exclude_has', 'filter_exclude_word', 'mention', 'raw']:
             if arg not in user_args:
                 user_args[arg] = []
+        
+        if 'stream' not in user_args:
+            await ctx.send("No stream specified!")
+            await ctx.send(
+f"""
+data_stream aktif:
+```cmd
+{[name + " " for name in self.active_streams.keys()]}
+```""") 
+            return
+        else:
+            user_args['stream'] = user_args['stream'][0]
+            if user_args['stream'] not in self.active_streams:
+                await ctx.send(
+f"""data_stream dengan nama {user_args['stream']} tidak ditemukan
+data_stream aktif:
+```cmd
+{[name + " " for name in self.active_streams.keys()]}
+```""")
+                return
+
         if 'name' not in user_args:
             user_args['name'] = str(random.randint(1000000, 9999999))
         else:
@@ -182,7 +233,7 @@ class Piper(commands.Cog):
             
         self.active_filters[user_args['name']] = piping.FilterStream(
             name                = user_args['name'], 
-            stream              = self.active_stream, 
+            stream              = self.active_streams[user_args['stream']], 
             channel             = ctx.channel, 
             mentionids          = user_args['mention'],
             filter_has          = user_args['filter_has'],
@@ -195,9 +246,9 @@ class Piper(commands.Cog):
     @commands.command()
     async def stop_filter_stream(self, ctx, name):
         if name in self.active_filters:
-            await ctx.send(self.active_stream.subscriber)
-            self.active_stream.subscriber = {key: val for (key, val) in self.active_stream.subscriber.items() if key != name}
-            await ctx.send(self.active_stream.subscriber)
+            await ctx.send(self.active_filters[name].stream.subscriber)
+            self.active_filters[name].stream.subscriber = {key: val for (key, val) in self.active_filters[name].stream.subscriber.items() if key != name}
+            await ctx.send(self.active_filters[name].stream.subscriber)
             del self.active_filters[name]
             await ctx.send(f"filter_stream dengan nama {name} telah dihentikan, hopefully :<")
         else:
@@ -207,9 +258,12 @@ filter_stream aktif:
 ```cmd
 {[name + " " for name in self.active_filters.keys()]}
 ```""")
+    def default_val():
+        pass
+
 
     def translate(self, text: str):
-        for nono in """!"#$%&'()*+,./:;<=>?@[\]^`{|}~""":
+        for nono in """!"#$%&'()*,./:;<=>?@[\]^`{|}~""":
             text = text.replace(nono, '')
         text = text.lower().split("\n")
         args = {}
@@ -217,7 +271,6 @@ filter_stream aktif:
             line = line.strip()
             if ' ' in line:
                 key, value = line.split(' ', maxsplit=1)
-
                 args[key] = list(filter(('').__ne__, value.split(' ')))
 
         return args
@@ -318,10 +371,74 @@ class Cheat(commands.Cog):
     @commands.command(aliases=['pg'])
     async def prim(self, ctx, util,   *, arg = ""):
         importlib.reload(cheatxxx)
-        await cheatxxx.primGen(client, ctx, util, arg)
+        await cheatxxx.prim_generator(client, ctx, util, arg)
+
+    @commands.command(aliases=['kg'])
+    async def kruskal(self, ctx, util,   *, arg = ""):
+        importlib.reload(cheatxxx)
+        await cheatxxx.kruskal_generator(client, ctx, util, arg)
+    
+    @commands.command(aliases=['hg'])
+    async def huffman(self, ctx, util,   *, arg = ""):
+        importlib.reload(cheatxxx)
+        await cheatxxx.huffman_generator(client, ctx, util, arg)
+
+    @commands.command(aliases=['wpg'])
+    async def welch_powell(self, ctx, util,   *, arg = ""):
+        importlib.reload(cheatxxx)
+        await cheatxxx.welch_generator(client, ctx, util, arg)
 
 
+class Music(commands.Cog):
 
+    def __init__(self, bot):
+        self.bot = bot
+
+        if not hasattr(bot, 'wavelink'):
+            self.bot.wavelink = wavelink.Client(bot=self.bot)
+
+        self.bot.loop.create_task(self.start_nodes())
+
+    async def start_nodes(self):
+        await self.bot.wait_until_ready()
+
+        # Initiate our nodes. For this example we will use one server.
+        # Region should be a discord.py guild.region e.g sydney or us_central (Though this is not technically required)
+        # try:
+        await self.bot.wavelink.initiate_node(host='127.0.0.1',
+                                            port=2333,
+                                            rest_uri='http://127.0.0.1:2333',
+                                            password='Passw0rd',
+                                            identifier='MAIN',
+                                            region='us_central')
+        # except Exception as e:
+        #     await self.bot.send(e)
+
+    @commands.command(name='connect')
+    async def connect_(self, ctx, *, channel: discord.VoiceChannel=None):
+        if not channel:
+            try:
+                channel = ctx.author.voice.channel
+            except AttributeError:
+                raise discord.DiscordException('No channel to join. Please either specify a valid channel or join one.')
+
+        player = self.bot.wavelink.get_player(ctx.guild.id)
+        await ctx.send(f'Connecting to **`{channel.name}`**')
+        await player.connect(channel.id)
+
+    @commands.command()
+    async def super_play(self, ctx, *, query: str):
+        tracks = await self.bot.wavelink.get_tracks(f'ytsearch:{query}')
+
+        if not tracks:
+            return await ctx.send('Could not find any songs with that query.')
+
+        player = self.bot.wavelink.get_player(ctx.guild.id)
+        if not player.is_connected:
+            await ctx.invoke(self.connect_)
+
+        await ctx.send(f'Added {str(tracks[0])} to the queue.')
+        await player.play(tracks[0])
 
 
 class Player(commands.Cog):
@@ -372,16 +489,16 @@ class Player(commands.Cog):
 
     @commands.command(aliases=['s'])
     async def stop(self, ctx):
-        await ctx.voice_client.stop()
+        ctx.voice_client.stop()
 
     @commands.command()
     async def pause(self, ctx):
-        await ctx.voice_client.pause()
+        ctx.voice_client.pause()
 
     @commands.command()
     async def resume(self, ctx):
         if ctx.voice_client.is_paused():
-            await ctx.voice_client.resume()
+            ctx.voice_client.resume()
 
     @commands.command()
     async def is_connected(self, ctx):
@@ -408,6 +525,7 @@ client.add_cog(NHentaiScrap(client))
 client.add_cog(Absen(client))
 client.add_cog(Cheat(client))
 client.add_cog(Player(client))
+client.add_cog(Music(client))
 
 print(TOKEN)
 sys.stdout.flush()        

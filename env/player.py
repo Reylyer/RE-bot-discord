@@ -287,3 +287,7 @@ def slugify(value, allow_unicode=False):
         value = unicodedata.normalize('NFKD', value).encode('ascii', 'ignore').decode('ascii')
     value = re.sub(r'[^\w\s-]', '', value.lower())
     return re.sub(r'[-\s]+', '-', value).strip('-_')
+
+async def voice_status(ctx, client):
+    voice_client = discord.utils.get(client.voice_clients, guild=ctx.guild) 
+    await ctx.send("```json\n" + json.dumps({k:v for (k,v) in voice_client.__dict__.items() if type(v) in [str, int, bool]}, indent=4) + "```")

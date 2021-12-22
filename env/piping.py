@@ -34,12 +34,9 @@ class DataStream(AsyncStream, object):
     def __init__(self, consumer_key, consumer_secret, access_token, access_token_secret, name = None, *, max_retries=..., proxy=None):
         super().__init__(consumer_key, consumer_secret, access_token, access_token_secret, max_retries=max_retries, proxy=proxy)
 
-        if name == None:
-            name = str(random.randint(1000000, 9999999))
         self.name = name
         self.newest_tweet = None
         self.subscriber = {}
-
 
     async def on_connect(self):
         print("connected to stream")
@@ -105,7 +102,7 @@ filter_word         = {self.filter_word}
 filter_exclude_has  = {self.filter_exclude_has}
 filter_exclude_word = {self.filter_exclude_word}
 
-stop using s-stop_filter_stream {self.name}
+stop using sudo stop_filter_stream {self.name}
 ```
 """
         ))
