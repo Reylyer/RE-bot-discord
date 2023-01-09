@@ -17,7 +17,7 @@ CTFTIME_LOGO_URL = "https://pbs.twimg.com/profile_images/2189766987/ctftime-logo
 class Publisher:
     subscriber = {}
     terminated = False
-    pollrate = 3600
+    pollrate = 1200
 
     def shutdown(self):
         self.terminated = True
@@ -32,6 +32,7 @@ class Publisher:
 class Ctftime_Publisher(Publisher):
     def __init__(self, pollrate: float) -> None:
         self.pollrate = pollrate
+        asyncio.create_task(self.fetch_loop())
 
     async def fetch_loop(self):
         last_response = {}
@@ -97,8 +98,6 @@ class Subscription(commands.Cog):
     @commands.command()
     async def ctftime(self, ctx: commands.Context):
         self.ctftime_subscriber = Ctftime_Subscriber("subs 1", ctx.channel, self.ctftime_publisher) #type: ignore
-        ...
-
 
     def whatsapp(self, ctx, **kwargs):
         pass
