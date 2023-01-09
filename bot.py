@@ -18,7 +18,7 @@ PREFIX: list = os.getenv('PREFIX').split(',')  #type: ignore
 print(PREFIX)
 client = commands.Bot(command_prefix=PREFIX, intents=discord.Intents().all())
 
-
+# succesfully logged in
 @client.event
 async def on_ready():
     await client.add_cog(CoreCommands(client))
