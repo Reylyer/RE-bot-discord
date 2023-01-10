@@ -17,7 +17,6 @@ CTFTIME_LOGO_URL = "https://pbs.twimg.com/profile_images/2189766987/ctftime-logo
 class Publisher:
     subscriber = {}
     terminated = False
-    pollrate = 1200
 
     def shutdown(self):
         self.terminated = True
@@ -35,11 +34,13 @@ class Ctftime_Publisher(Publisher):
         asyncio.create_task(self.fetch_loop())
 
     async def fetch_loop(self):
+        await asyncio.sleep(30)
+
         last_response = {}
         while not self.terminated:
             response = self.fetch()
             if response and last_response != response:
-                for name, callback in self.subscriber:
+                for name, callback in self.subscriber.items():
                     callback(response)
 
             await asyncio.sleep(self.pollrate)
@@ -81,16 +82,15 @@ class Ctftime_Subscriber:
 
         return embed
 
+
 class Endlessh:
     channel_id = ""
-
-
 
 class Subscription(commands.Cog):
     def __init__(self, client) -> None:
         super().__init__()
         self.client = client
-        self.ctftime_publisher = Ctftime_Publisher(3600)
+        self.ctftime_publisher = Ctftime_Publisher(1200)
 
         self.__get_self_methods()
         self.__create_parser()
