@@ -6,13 +6,18 @@ from discord.ext import commands
 
 import requests, json, asyncio
 import argparse, inspect
+import subprocess, os
 
 from datetime import datetime, timedelta
 
 TIME_FORMAT = '%Y-%m-%dT%H:%M:%S+00:00'
+TIME_FORMAT2 = '%Y-%m-%dT%H:%M:%S+00:00Z'
 PTIME_FORMAT = '%a, %d %b %Y %H:%M'
 CTFTIME_LOGO_URL = "https://pbs.twimg.com/profile_images/2189766987/ctftime-logo-avatar_400x400.png"
+SSH_LOGO = "https://w7.pngwing.com/pngs/1008/422/png-transparent-round-greater-than-and-minus-illustratuion-brand-logo-circle-terminal-logo-linux-button-ui-system-apps.png"
 
+ORANGE_WARNING = "#FF7900"
+GREEN_OK = "#7CFC00"
 
 class Publisher:
     subscriber = {}
@@ -83,8 +88,48 @@ class Ctftime_Subscriber:
         return embed
 
 
-class Endlessh:
-    channel_id = ""
+#single instance
+class Endlessh_Pipe:
+    "permit endlessh to use port 22 first, `sudo setcap cap_net_bind_service=ep /bin/endlessh`"
+    command = ["endlessh", "-p", "22"]
+    terminated = False
+    def __init__(self, channel: discord.TextChannel) -> None:
+        self.channel = channel
+        
+    def loop(self):
+        popen = subprocess.Popen(self.command, stdout=subprocess.PIPE, universal_newlines=True, bufsize=1)
+        for stdout_line in popen.stdout: # type: ignore
+            if self.terminated:
+                # send stop signal
+                ...
+            print(stdout_line)
+            asyncio.create_task(self.channel.send(embed=self.build_embed(stdout_line)))
+
+        popen.stdout.close() # type: ignore
+        # return_code = popen.wait()
+
+    def build_embed(self, response: str):
+        tokens = response.split()
+        if tokens[1] == "ACCEPT":
+            color = ORANGE_WARNING
+        else:
+            color = GREEN_OK
+        
+        embed : discord.Embed = discord.Embed(color = discord.Color.from_str(color))
+
+        time = datetime.strptime(tokens[0], TIME_FORMAT) # + timedelta(hours=7)
+
+        desc =  f"{tokens[1]}\n"
+        desc += f"Time: {time.strftime(PTIME_FORMAT)}\n\n"
+        desc += f"Host: {tokens[2][5:]}\n"
+        desc += f"Port: {tokens[3][5:]}\n"
+        if tokens[1] == "CLOSE":
+            desc += f"Binding time: {tokens[5][5:]}\n"
+
+        embed.description = desc
+        embed.set_author(name="Endlessh", icon_url=SSH_LOGO)
+
+        return embed
 
 class Subscription(commands.Cog):
     def __init__(self, client) -> None:
@@ -115,12 +160,4 @@ class Subscription(commands.Cog):
         self.methods = mtds = [t[0] for t in inspect.getmembers(self, predicate=inspect.ismethod) if not t[0].startswith('_Koran_')]
         print(mtds)
         # mtds.remove("koran")
-
-
-def request_ctftime() -> Any:
-    r = requests.get("https://ctftime.org/api/v1/events/?limit=1", headers = {"User-Agent": 'browser palsu'})
-    if r.status_code == 200:
-        return json.loads(r.text)[0]
-    else:
-        return False
 
