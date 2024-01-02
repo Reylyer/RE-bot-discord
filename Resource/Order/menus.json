@@ -1,0 +1,12 @@
+{
+    "depsu": {
+        "Chicken Katsu": {
+            "price": 21000,
+            "details": ""
+        },
+        "Air Putih": {
+            "price": 1000,
+            "details": ""
+        }
+    }
+}

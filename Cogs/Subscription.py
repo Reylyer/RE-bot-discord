@@ -8,6 +8,7 @@ import requests, json, asyncio
 import argparse, inspect
 import subprocess, os
 
+import dateutil.parser
 from datetime import datetime, timedelta
 
 TIME_FORMAT = '%Y-%m-%dT%H:%M:%S+00:00'
@@ -47,6 +48,7 @@ class Ctftime_Publisher(Publisher):
             if response and last_response != response:
                 for name, callback in self.subscriber.items():
                     callback(response)
+                last_response = response
 
             await asyncio.sleep(self.pollrate)
 
@@ -91,25 +93,33 @@ class Ctftime_Subscriber:
 #single instance
 class Endlessh_Pipe:
     "permit endlessh to use port 22 first, `sudo setcap cap_net_bind_service=ep /bin/endlessh`"
-    command = ["endlessh", "-p", "22"]
+    command = "endlessh -p 22 -4 -v"
     terminated = False
     def __init__(self, channel: discord.TextChannel) -> None:
         self.channel = channel
         
-    def loop(self):
-        popen = subprocess.Popen(self.command, stdout=subprocess.PIPE, universal_newlines=True, bufsize=1)
-        for stdout_line in popen.stdout: # type: ignore
-            if self.terminated:
-                # send stop signal
-                ...
-            print(stdout_line)
-            asyncio.create_task(self.channel.send(embed=self.build_embed(stdout_line)))
+        asyncio.create_task(self.loop())
+        
+    async def loop(self):
+        proc = await asyncio.create_subprocess_shell(self.command, stdout=asyncio.subprocess.PIPE)
+        print("Load")
 
-        popen.stdout.close() # type: ignore
-        # return_code = popen.wait()
+        while not self.terminated:
+            line = await proc.stdout.readline() #type: ignore
+            if line:
+                tokens = line.decode('ascii').rstrip().split()
+                print(tokens)
+                if len(tokens) < 6:
+                    continue
+                embed = self.build_embed(tokens)
+                await self.channel.send(embed=embed) # type: ignore
+            else:
+                await asyncio.sleep(5)
+            
+        print("Exit")
+        await proc.wait()
 
-    def build_embed(self, response: str):
-        tokens = response.split()
+    def build_embed(self, tokens):
         if tokens[1] == "ACCEPT":
             color = ORANGE_WARNING
         else:
@@ -117,7 +127,7 @@ class Endlessh_Pipe:
         
         embed : discord.Embed = discord.Embed(color = discord.Color.from_str(color))
 
-        time = datetime.strptime(tokens[0], TIME_FORMAT) # + timedelta(hours=7)
+        time = dateutil.parser.isoparse(tokens[0]) + timedelta(hours=7)
 
         desc =  f"{tokens[1]}\n"
         desc += f"Time: {time.strftime(PTIME_FORMAT)}\n\n"
@@ -144,11 +154,11 @@ class Subscription(commands.Cog):
     async def ctftime(self, ctx: commands.Context):
         self.ctftime_subscriber = Ctftime_Subscriber("subs 1", ctx.channel, self.ctftime_publisher) #type: ignore
 
-    def whatsapp(self, ctx, **kwargs):
-        pass
+    @commands.command()
+    async def endlessh(self, ctx: commands.Context):
+        self.endlessh_pipe = Endlessh_Pipe(ctx.channel)  #type: ignore
+        ...
 
-    def nhentai(self, ctx, **kwargs):
-        pass
 
     # INTERNAL USE
     def __create_parser(self):

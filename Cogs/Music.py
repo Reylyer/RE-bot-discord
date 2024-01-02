@@ -15,9 +15,9 @@ class Music(commands.Cog):
         await self.bot.wait_until_ready()
 
         await wavelink.NodePool.create_node(bot=self.bot,
-                                            host='0.0.0.0',
+                                            host='20.70.0.138',
                                             port=2333,
-                                            password='whoops')
+                                            password='younotpassjustkiddingyoushallpass')
 
     @commands.Cog.listener()
     async def on_wavelink_node_ready(self, node: wavelink.Node):
